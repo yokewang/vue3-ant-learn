@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, nextTick } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import mermaid from 'mermaid'
 
 const props = defineProps({
@@ -11,15 +11,32 @@ const props = defineProps({
     type: Object,
     default: () => ({}),
   },
+  debounceMs: {
+    type: Number,
+    default: 200,
+  },
 })
+
+const emit = defineEmits(['preview', 'rendered', 'error'])
 
 let mermaidInitialized = false
 const containerEl = ref(null)
 let renderCounter = 0
-const lastSuccessfulSvg = ref('')
+let debounceTimer = null
+const errorSummary = ref('')
 
-async function renderDiagram() {
-  if (!containerEl.value) return
+function summarizeError(err) {
+  return String(err?.message ?? err ?? '')
+}
+
+function escapeHtml(s) {
+  return (s || '').replace(
+    /[&<>"']/g,
+    (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m],
+  )
+}
+
+async function doRender() {
   const code = props.source || ''
 
   try {
@@ -32,57 +49,104 @@ async function renderDiagram() {
     }
 
     if (!code.trim()) {
-      containerEl.value.innerHTML = ''
-      lastSuccessfulSvg.value = ''
+      if (containerEl.value) containerEl.value.innerHTML = ''
+      errorSummary.value = ''
       return
     }
 
-    // Validate first; on error, keep the last successful diagram and suppress inline error
+    // Validate first
     mermaid.parse(code)
   } catch (err) {
-    containerEl.value.innerHTML = lastSuccessfulSvg.value || ''
+    errorSummary.value = summarizeError(err)
+    if (containerEl.value) containerEl.value.innerHTML = ''
     return
   }
 
   try {
     const id = `mermaid-svg-${Date.now()}-${renderCounter++}`
     const { svg } = await mermaid.render(id, code)
-    containerEl.value.innerHTML = svg
-    lastSuccessfulSvg.value = svg
+    if (containerEl.value) containerEl.value.innerHTML = svg
+    errorSummary.value = ''
   } catch (err) {
-    containerEl.value.innerHTML = lastSuccessfulSvg.value || ''
+    errorSummary.value = summarizeError(err)
+    if (containerEl.value) containerEl.value.innerHTML = ''
   }
 }
 
+function scheduleRender() {
+  const delay = Number(props.debounceMs ?? 200)
+  if (delay <= 0) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+    errorSummary.value = ''
+    doRender()
+    return
+  }
+  if (containerEl.value) {
+    const raw = escapeHtml(props.source || '')
+    containerEl.value.innerHTML = `<pre class="mermaid-raw">${raw}</pre>`
+  }
+  emit('preview')
+  errorSummary.value = ''
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    doRender()
+      .then(() => {
+        if (!errorSummary.value) emit('rendered')
+      })
+      .catch((err) => {
+        emit('error', summarizeError(err))
+      })
+  }, delay)
+}
+
 onMounted(() => {
-  renderDiagram()
+  scheduleRender()
 })
 
 watch(
   () => props.source,
-  async () => {
-    await nextTick()
-    renderDiagram()
+  () => {
+    scheduleRender()
   },
 )
 
 watch(
   () => props.options,
-  async () => {
-    await nextTick()
-    renderDiagram()
+  () => {
+    scheduleRender()
   },
   { deep: true },
 )
 </script>
 
 <template>
-  <div ref="containerEl" class="mermaid-viewer"></div>
+  <div>
+    <div v-if="errorSummary" class="mermaid-error">渲染失败：{{ errorSummary }}</div>
+    <div ref="containerEl" class="mermaid-viewer"></div>
+  </div>
 </template>
 
 <style scoped>
 .mermaid-viewer {
   line-height: 1.7;
   color: rgba(0, 0, 0, 0.88);
+}
+.mermaid-error {
+  color: #cf1322;
+  background: #fff1f0;
+  border: 1px solid #ffa39e;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.mermaid-raw {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 12px;
+  background: #fafafa;
+  color: rgba(0, 0, 0, 0.65);
+  border-radius: 4px;
 }
 </style>

@@ -18,6 +18,13 @@ const panelHeight = 300
 
 const streamContainerEl = ref(null)
 
+function scrollToBottom() {
+  const el = streamContainerEl.value
+  if (el) {
+    el.scrollTop = el.scrollHeight
+  }
+}
+
 function startStream() {
   if (streaming.value) return
   streaming.value = true
@@ -46,10 +53,7 @@ onBeforeUnmount(() => {
 
 watch(streamText, async () => {
   await nextTick()
-  const el = streamContainerEl.value
-  if (el) {
-    el.scrollTop = el.scrollHeight
-  }
+  scrollToBottom()
 })
 </script>
 
@@ -63,7 +67,7 @@ watch(streamText, async () => {
       <a-col :span="12">
         <a-typography-title :level="4">Preview</a-typography-title>
         <div class="light-border" :style="{ height: panelHeight + 'px' }">
-          <MermaidViewer :source="text" />
+          <MermaidViewer :source="text" :debounce-ms="0" />
         </div>
       </a-col>
     </a-row>
@@ -77,7 +81,12 @@ watch(streamText, async () => {
       <a-col :span="12">
         <a-typography-title :level="4">Stream Preview</a-typography-title>
         <div ref="streamContainerEl" class="light-border" :style="{ height: panelHeight + 'px' }">
-          <MermaidViewer :source="streamText" />
+          <MermaidViewer
+            :source="streamText"
+            @preview="scrollToBottom"
+            @rendered="scrollToBottom"
+            @error="scrollToBottom"
+          />
         </div>
       </a-col>
     </a-row>
