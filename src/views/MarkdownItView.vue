@@ -36,12 +36,12 @@ const panelHeight = 300
 // 流式预览容器的 DOM 引用，用于自动滚动到底部
 const streamContainerEl = ref(null)
 
-// 点击按钮开始“流式输出”，以 20ms/字符 的节奏向右侧面板追加内容
+// 点击按钮开始“流式输出”（使用上方编辑器内容），以 20ms/字符 的节奏向右侧面板追加内容
 function startStream() {
   if (streaming.value) return
   streaming.value = true
   streamText.value = ''
-  const content = `# Stream Demo\n\nThis panel shows dynamic updates.\n\n- Chunked append\n- Markdown-it render\n- highlight.js code\n\n## Code\n\n\`\`\`js\nfor (let i = 0; i < 3; i++) {\n  console.log('stream', i)\n}\n\`\`\`\n\nDone.\n`
+  const content = text.value || ''
   let index = 0
   const step = () => {
     if (index >= content.length) {

@@ -31,7 +31,7 @@ function startStream() {
   if (streaming.value) return
   streaming.value = true
   streamText.value = ''
-  const content = `# Stream Demo\n\nThis panel shows dynamic updates.\n\n- Chunked append\n- marked render\n- highlight.js code\n\n## Code\n\n\`\`\`js\nfor (let i = 0; i < 3; i++) {\n  console.log('stream', i)\n}\n\`\`\`\n\nDone.\n`
+  const content = text.value || ''
   let index = 0
   const step = () => {
     if (index >= content.length) {
