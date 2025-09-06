@@ -6,6 +6,7 @@ import MarkdownItView from '../views/MarkdownItView.vue'
 import MarkedView from '../views/MarkedView.vue'
 import MermaidView from '../views/MermaidView.vue'
 import TabsView from '../views/TabsView.vue'
+import MermaidTabsView from '../views/MermaidTabsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -44,6 +45,11 @@ const router = createRouter({
       path: '/tabs',
       name: 'tabs',
       component: TabsView,
+    },
+    {
+      path: '/mermaid-tabs',
+      name: 'mermaid-tabs',
+      component: MermaidTabsView,
     },
   ],
 })

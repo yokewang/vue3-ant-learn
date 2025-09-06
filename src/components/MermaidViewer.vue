@@ -28,6 +28,8 @@ const containerEl = ref(null)
 let renderCounter = 0
 let debounceTimer = null
 const errorSummary = ref('')
+const renderCache = new Map() // Cache for rendered SVG
+const isRendered = ref(false) // Track if current content is rendered
 
 function summarizeError(err) {
   return String(err?.message ?? err ?? '')
@@ -42,6 +44,7 @@ function escapeHtml(s) {
 
 async function doRender() {
   const code = props.source || ''
+  const cacheKey = code.trim()
 
   try {
     const baseConfig = { startOnLoad: false, securityLevel: 'strict' }
@@ -63,6 +66,16 @@ async function doRender() {
     if (!code.trim()) {
       if (containerEl.value) containerEl.value.innerHTML = ''
       errorSummary.value = ''
+      isRendered.value = false
+      return
+    }
+
+    // Check cache first
+    if (renderCache.has(cacheKey)) {
+      const cachedSvg = renderCache.get(cacheKey)
+      if (containerEl.value) containerEl.value.innerHTML = cachedSvg
+      errorSummary.value = ''
+      isRendered.value = true
       return
     }
 
@@ -71,6 +84,7 @@ async function doRender() {
   } catch (err) {
     errorSummary.value = summarizeError(err)
     if (containerEl.value) containerEl.value.innerHTML = ''
+    isRendered.value = false
     return
   }
 
@@ -78,15 +92,22 @@ async function doRender() {
     const id = `mermaid-svg-${Date.now()}-${renderCounter++}`
     const { svg } = await mermaid.render(id, code)
     if (containerEl.value) containerEl.value.innerHTML = svg
+    // Cache the rendered SVG
+    renderCache.set(cacheKey, svg)
     errorSummary.value = ''
+    isRendered.value = true
   } catch (err) {
     errorSummary.value = summarizeError(err)
     if (containerEl.value) containerEl.value.innerHTML = ''
+    isRendered.value = false
   }
 }
 
 function scheduleRender() {
   const delay = Number(props.debounceMs ?? 200)
+  const code = props.source || ''
+  const cacheKey = code.trim()
+
   if (delay <= 0) {
     clearTimeout(debounceTimer)
     debounceTimer = null
@@ -94,7 +115,18 @@ function scheduleRender() {
     doRender()
     return
   }
-  if (containerEl.value) {
+
+  // If content is cached, render immediately without showing raw markdown
+  if (renderCache.has(cacheKey)) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+    errorSummary.value = ''
+    doRender()
+    return
+  }
+
+  // Only show raw markdown for new content that needs to be rendered
+  if (containerEl.value && !isRendered.value) {
     const raw = escapeHtml(props.source || '')
     containerEl.value.innerHTML = `<pre class="mermaid-raw">${raw}</pre>`
   }
@@ -119,6 +151,7 @@ onMounted(() => {
 watch(
   () => props.source,
   () => {
+    isRendered.value = false
     scheduleRender()
   },
 )
