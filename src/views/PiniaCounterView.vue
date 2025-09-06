@@ -7,7 +7,8 @@ const counter = useCounterStore()
   <div style="padding: 24px">
     <a-typography-title :level="3">Pinia Counter</a-typography-title>
     <a-typography-paragraph>
-      当前计数：<strong>{{ counter.count }}</strong>（双倍：{{ counter.doubleCount }}）
+      当前计数：<strong>{{ counter.count }}</strong
+      >（双倍：{{ counter.doubleCount }}）
     </a-typography-paragraph>
     <a-space>
       <a-button type="primary" @click="counter.increment">increment</a-button>
@@ -16,7 +17,4 @@ const counter = useCounterStore()
   </div>
 </template>
 
-<style scoped>
-</style>
-
-
+<style scoped></style>

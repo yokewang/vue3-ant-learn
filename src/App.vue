@@ -8,8 +8,8 @@ const route = useRoute()
 const links = computed(() =>
   router
     .getRoutes()
-    .filter(r => r.path && !r.path.includes(':'))
-    .map(r => ({ path: r.path, label: r.name || r.path }))
+    .filter((r) => r.path && !r.path.includes(':'))
+    .map((r) => ({ path: r.path, label: r.name || r.path })),
 )
 </script>
 
@@ -65,4 +65,3 @@ const links = computed(() =>
   min-height: 100vh;
 }
 </style>
-

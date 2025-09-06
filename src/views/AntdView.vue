@@ -1,5 +1,4 @@
-<script setup>
-</script>
+<script setup></script>
 
 <template>
   <div style="padding: 24px">
@@ -21,10 +20,6 @@
   <div style="padding: 24px">
     <a-alert message="Antd 正常工作中" type="success" show-icon />
   </div>
-  
 </template>
 
-<style scoped>
-</style>
-
-
+<style scoped></style>
