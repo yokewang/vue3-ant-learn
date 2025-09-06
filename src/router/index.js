@@ -3,6 +3,7 @@ import HomeView from '../views/HomeView.vue'
 import AntdView from '../views/AntdView.vue'
 import PiniaCounterView from '../views/PiniaCounterView.vue'
 import MarkdownItView from '../views/MarkdownItView.vue'
+import MarkedView from '../views/MarkedView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,6 +27,11 @@ const router = createRouter({
       path: '/markdown-it',
       name: 'markdown-it',
       component: MarkdownItView,
+    },
+    {
+      path: '/marked',
+      name: 'marked',
+      component: MarkedView,
     },
   ],
 })
