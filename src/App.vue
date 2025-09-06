@@ -1,85 +1,68 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
+import { computed } from 'vue'
+
+const router = useRouter()
+const route = useRoute()
+
+const links = computed(() =>
+  router
+    .getRoutes()
+    .filter(r => r.path && !r.path.includes(':'))
+    .map(r => ({ path: r.path, label: r.name || r.path }))
+)
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
+  <a-layout style="min-height: 100vh">
+    <a-layout-sider :width="180" theme="dark">
+      <nav class="sider-links">
+        <RouterLink
+          v-for="r in links"
+          :key="r.path"
+          :to="r.path"
+          :class="{ active: route.path === r.path }"
+        >
+          {{ r.label }}
+        </RouterLink>
       </nav>
-    </div>
-  </header>
-
-  <RouterView />
+    </a-layout-sider>
+    <a-layout>
+      <a-layout-content class="content">
+        <RouterView />
+      </a-layout-content>
+    </a-layout>
+  </a-layout>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
+.sider-links {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px;
+  gap: 8px;
 }
 
-.logo {
+.sider-links a {
+  color: rgba(255, 255, 255, 0.95);
+  text-decoration: none;
   display: block;
-  margin: 0 auto 2rem;
+  padding: 6px 8px;
+  border-radius: 6px;
 }
 
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
+.sider-links a.router-link-exact-active {
+  background: rgba(255, 255, 255, 0.18);
 }
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
+.sider-links a.active {
+  background: rgba(255, 255, 255, 0.18);
 }
 
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
+.content {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
 }
 </style>
+
