@@ -2,13 +2,15 @@
 import { ref, onBeforeUnmount, watch, nextTick } from 'vue'
 import MermaidViewer from '../components/MermaidViewer.vue'
 
-const text = ref(`graph TD
+const initialText = `graph TD
   A[Start] --> B{Check}
   B -- Yes --> C[Do thing]
   B -- No --> D[Skip]
   C --> E[End]
   D --> E[End]
-`)
+`
+
+const text = ref(initialText)
 
 const streamText = ref('')
 const streaming = ref(false)
@@ -23,6 +25,14 @@ function scrollToBottom() {
   if (el) {
     el.scrollTop = el.scrollHeight
   }
+}
+
+function prefixErrorToInitial() {
+  text.value = `***error***\n${initialText}`
+}
+
+function resetToInitial() {
+  text.value = initialText
 }
 
 function startStream() {
@@ -76,6 +86,12 @@ watch(streamText, async () => {
   <div style="padding: 0 24px 24px">
     <a-row :gutter="16">
       <a-col :span="12">
+        <div style="margin-bottom: 8px">
+          <a-space>
+            <a-button danger @click="prefixErrorToInitial">error</a-button>
+            <a-button @click="resetToInitial">reset</a-button>
+          </a-space>
+        </div>
         <a-button type="primary" @click="startStream" :loading="streaming">stream</a-button>
       </a-col>
       <a-col :span="12">

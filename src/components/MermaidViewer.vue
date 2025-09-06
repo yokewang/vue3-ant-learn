@@ -15,6 +15,10 @@ const props = defineProps({
     type: Number,
     default: 200,
   },
+  suppressErrorRendering: {
+    type: Boolean,
+    default: true,
+  },
 })
 
 const emit = defineEmits(['preview', 'rendered', 'error'])
@@ -42,10 +46,18 @@ async function doRender() {
   try {
     const baseConfig = { startOnLoad: false, securityLevel: 'strict' }
     if (!mermaidInitialized) {
-      mermaid.initialize({ ...baseConfig, ...props.options })
+      mermaid.initialize({
+        ...baseConfig,
+        ...props.options,
+        suppressErrorRendering: props.suppressErrorRendering,
+      })
       mermaidInitialized = true
     } else if (props.options && Object.keys(props.options).length > 0) {
-      mermaid.initialize({ ...baseConfig, ...props.options })
+      mermaid.initialize({
+        ...baseConfig,
+        ...props.options,
+        suppressErrorRendering: props.suppressErrorRendering,
+      })
     }
 
     if (!code.trim()) {
