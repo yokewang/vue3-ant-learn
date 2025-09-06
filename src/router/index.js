@@ -4,6 +4,7 @@ import AntdView from '../views/AntdView.vue'
 import PiniaCounterView from '../views/PiniaCounterView.vue'
 import MarkdownItView from '../views/MarkdownItView.vue'
 import MarkedView from '../views/MarkedView.vue'
+import MermaidView from '../views/MermaidView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -32,6 +33,11 @@ const router = createRouter({
       path: '/marked',
       name: 'marked',
       component: MarkedView,
+    },
+    {
+      path: '/mermaid',
+      name: 'mermaid',
+      component: MermaidView,
     },
   ],
 })
