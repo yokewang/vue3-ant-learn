@@ -4,7 +4,7 @@
 // Vue 基础 API
 import { ref, onBeforeUnmount, watch, nextTick } from 'vue'
 // Markdown 渲染组件（基于 markdown-it + highlight.js）
-import MarkdownItViewer from '../components/MarkdownItViewer.vue'
+import MarkdownItViewer from '@/components/MarkdownItViewer.vue'
 
 // 编辑器双向绑定的 Markdown 文本（上方 Preview 同步渲染）
 const text = ref(`# Markdown Demo

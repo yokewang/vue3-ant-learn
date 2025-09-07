@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onBeforeUnmount, watch, nextTick } from 'vue'
-import MarkedViewer from '../components/MarkedViewer.vue'
+import MarkedViewer from '@/components/MarkedViewer.vue'
 
 const text = ref(`# Marked + Collapse Demo
 

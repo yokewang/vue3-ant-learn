@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onBeforeUnmount, computed } from 'vue'
-import MermaidTabs from '../components/MermaidTabs.vue'
+import MermaidTabs from '@/components/MermaidTabs.vue'
 
 const initialText = `graph TD
   A[Start] --> B{Check}

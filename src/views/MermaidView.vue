@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onBeforeUnmount, watch, nextTick } from 'vue'
-import MermaidViewer from '../components/MermaidViewer.vue'
+import MermaidViewer from '@/components/MermaidViewer.vue'
 
 const initialText = `graph TD
   A[Start] --> B{Check}
