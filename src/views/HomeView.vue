@@ -5,6 +5,9 @@
       <a-space>
         <a-button type="primary" @click="testGet">Test GET /api/hello</a-button>
         <a-button @click="testPost">Test POST /api/hello</a-button>
+        <a-button type="dashed" @click="testStream" :loading="streamLoading"
+          >Test SSE /api/hello/stream</a-button
+        >
       </a-space>
     </div>
     <div style="margin-top: 12px">
@@ -12,6 +15,8 @@
       <pre>{{ getResult }}</pre>
       <p>POST Result:</p>
       <pre>{{ postResult }}</pre>
+      <p>SSE Result:</p>
+      <pre>{{ streamText }}</pre>
     </div>
   </div>
 </template>
@@ -22,6 +27,8 @@ import { message } from 'ant-design-vue'
 
 const getResult = ref('')
 const postResult = ref('')
+const streamText = ref('')
+const streamLoading = ref(false)
 
 async function testGet() {
   try {
@@ -46,6 +53,35 @@ async function testPost() {
     message.success('POST success')
   } catch (err) {
     message.error('POST failed')
+  }
+}
+
+function testStream() {
+  streamText.value = ''
+  streamLoading.value = true
+  try {
+    const es = new EventSource('/api/hello/stream')
+    es.onmessage = (e) => {
+      try {
+        const payload = JSON.parse(e.data)
+        streamText.value += payload.delta
+      } catch (e) {
+        // ignore non-json messages
+      }
+    }
+    es.addEventListener('end', () => {
+      message.success('SSE done')
+      streamLoading.value = false
+      es.close()
+    })
+    es.onerror = () => {
+      message.error('SSE error')
+      streamLoading.value = false
+      es.close()
+    }
+  } catch (e) {
+    message.error('SSE init failed')
+    streamLoading.value = false
   }
 }
 </script>
