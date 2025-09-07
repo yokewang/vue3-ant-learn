@@ -8,6 +8,7 @@ import CollapseMarkedView from '../views/CollapseMarkedView.vue'
 import MermaidView from '../views/MermaidView.vue'
 import TabsView from '../views/TabsView.vue'
 import MermaidTabsView from '../views/MermaidTabsView.vue'
+import AnalysisInputView from '../views/AnalysisInputView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -56,6 +57,11 @@ const router = createRouter({
       path: '/mermaid-tabs',
       name: 'mermaid-tabs',
       component: MermaidTabsView,
+    },
+    {
+      path: '/analysis-input',
+      name: 'analysis-input',
+      component: AnalysisInputView,
     },
   ],
 })
