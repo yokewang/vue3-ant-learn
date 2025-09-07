@@ -4,6 +4,7 @@ import AntdView from '../views/AntdView.vue'
 import PiniaCounterView from '../views/PiniaCounterView.vue'
 import MarkdownItView from '../views/MarkdownItView.vue'
 import MarkedView from '../views/MarkedView.vue'
+import CollapseMarkedView from '../views/CollapseMarkedView.vue'
 import MermaidView from '../views/MermaidView.vue'
 import TabsView from '../views/TabsView.vue'
 import MermaidTabsView from '../views/MermaidTabsView.vue'
@@ -35,6 +36,11 @@ const router = createRouter({
       path: '/marked',
       name: 'marked',
       component: MarkedView,
+    },
+    {
+      path: '/collapse-marked',
+      name: 'collapse-marked',
+      component: CollapseMarkedView,
     },
     {
       path: '/mermaid',
