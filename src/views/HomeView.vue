@@ -63,6 +63,8 @@ function testStream() {
     const es = new EventSource('/api/hello/stream')
     es.onmessage = (e) => {
       try {
+        // console.log('e.data', e.data)  //for debugging
+        // console.log('lastEventId=', e.lastEventId)  //for debugging
         const payload = JSON.parse(e.data)
         streamText.value += payload.delta
       } catch (e) {
