@@ -8,6 +8,7 @@ import CollapseMarkedView from '../views/CollapseMarkedView.vue'
 import MermaidView from '../views/MermaidView.vue'
 import TabsView from '../views/TabsView.vue'
 import MermaidTabsView from '../views/MermaidTabsView.vue'
+import AnalysisStreamView from '../views/AnalysisStreamView.vue'
 import AnalysisInputView from '../views/AnalysisInputView.vue'
 
 const router = createRouter({
@@ -62,6 +63,11 @@ const router = createRouter({
       path: '/analysis-input',
       name: 'analysis-input',
       component: AnalysisInputView,
+    },
+    {
+      path: '/analysis-stream',
+      name: 'analysis-stream',
+      component: AnalysisStreamView,
     },
   ],
 })
