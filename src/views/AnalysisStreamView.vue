@@ -5,6 +5,9 @@ import { useAnalysisSampleStore } from '@/stores/analysis-sample'
 import MarkedViewer from '@/components/MarkedViewer.vue'
 import MermaidTabs from '@/components/MermaidTabs.vue'
 
+// This view demonstrates two streaming ways to fill the `analysis` store:
+// 1) "stream" button simulates typing from local sample data
+// 2) "sse stream" consumes a real SSE endpoint and updates the store live
 const analysis = useAnalysisStore()
 const sample = useAnalysisSampleStore()
 
@@ -24,21 +27,38 @@ const items = computed(() =>
 )
 const activeKey = ref(items.value[0]?.key || '')
 
-// Streaming logic
+// Streaming state for the two modes
 const streaming = ref(false)
 let streamTimer = null
+const sseStreaming = ref(false)
+let esClient = null
 
-async function streamFill() {
-  if (streaming.value) return
-  streaming.value = true
-
+// Resets the analysis store to an empty state for a new stream session
+function resetAnalysisState() {
   analysis.summary = ''
   analysis.solution = ''
   analysis.alert = ''
   analysis.causeSummary = ''
   analysis.causeDetail = ''
   analysis.topos = []
+}
 
+// Ensure EventSource is properly closed
+function closeEventSource() {
+  if (esClient) {
+    esClient.close()
+    esClient = null
+  }
+}
+
+// Simulate streaming by typing characters from local sample data
+async function streamFill() {
+  if (streaming.value) return
+  streaming.value = true
+
+  resetAnalysisState()
+
+  // Types text into a reactive target character-by-character
   async function typeInto(setter, content) {
     const text = content || ''
     let i = 0
@@ -90,9 +110,10 @@ onBeforeUnmount(() => {
     clearInterval(streamTimer)
     streamTimer = null
   }
+  closeEventSource()
 })
 
-// Auto-scroll containers to bottom on update
+// Auto-scroll helpers (keep each panel scrolled to the bottom when updating)
 const summaryEl = ref(null)
 const solutionEl = ref(null)
 const alertEl = ref(null)
@@ -106,41 +127,85 @@ function scrollToBottom(elRef) {
   }
 }
 
-watch(
-  () => analysis.summary,
-  async () => {
+// Register an auto-scroll watcher for a reactive source
+function useAutoScroll(sourceGetter, elRef) {
+  watch(sourceGetter, async () => {
     await nextTick()
-    scrollToBottom(summaryEl)
-  },
-)
-watch(
-  () => analysis.solution,
-  async () => {
-    await nextTick()
-    scrollToBottom(solutionEl)
-  },
-)
-watch(
-  () => analysis.alert,
-  async () => {
-    await nextTick()
-    scrollToBottom(alertEl)
-  },
-)
-watch(
-  () => analysis.causeSummary,
-  async () => {
-    await nextTick()
-    scrollToBottom(causeSummaryEl)
-  },
-)
-watch(
-  () => analysis.causeDetail,
-  async () => {
-    await nextTick()
-    scrollToBottom(causeDetailEl)
-  },
-)
+    scrollToBottom(elRef)
+  })
+}
+
+useAutoScroll(() => analysis.summary, summaryEl)
+useAutoScroll(() => analysis.solution, solutionEl)
+useAutoScroll(() => analysis.alert, alertEl)
+useAutoScroll(() => analysis.causeSummary, causeSummaryEl)
+useAutoScroll(() => analysis.causeDetail, causeDetailEl)
+
+// Concatenate SSE tokens verbatim to preserve formatting (spaces/newlines)
+function appendTokenText(current, token) {
+  return (current || '') + (token || '')
+}
+
+// Consume SSE stream and incrementally fill the analysis store
+function sseStream() {
+  if (sseStreaming.value) return
+  sseStreaming.value = true
+
+  // reset state
+  resetAnalysisState()
+  activeKey.value = ''
+
+  esClient = new EventSource('/analysis/stream')
+
+  esClient.addEventListener('segment_start', (e) => {
+    try {
+      const payload = JSON.parse(e.data)
+      const field = payload.field
+      if (field === 'topos') {
+        const idx = typeof payload.index === 'number' ? payload.index : analysis.topos.length
+        // ensure index exists
+        while (analysis.topos.length <= idx) {
+          analysis.topos = [...analysis.topos, '']
+        }
+        activeKey.value = String(idx + 1)
+      } else if (field && field in analysis) {
+        analysis[field] = ''
+      }
+    } catch {}
+  })
+
+  esClient.addEventListener('segment_data', (e) => {
+    try {
+      const payload = JSON.parse(e.data)
+      const field = payload.field
+      const text = payload.text || ''
+      if (field === 'topos') {
+        const idx = typeof payload.index === 'number' ? payload.index : analysis.topos.length - 1
+        const arr = analysis.topos.slice()
+        const current = arr[idx] || ''
+        arr[idx] = appendTokenText(current, text)
+        analysis.topos = arr
+      } else if (field && typeof analysis[field] === 'string') {
+        analysis[field] = appendTokenText(analysis[field], text)
+      }
+    } catch {}
+  })
+
+  esClient.addEventListener('segment_end', (e) => {
+    try {
+      const payload = JSON.parse(e.data)
+      if (payload.field === 'causeDetail') {
+        sseStreaming.value = false
+        closeEventSource()
+      }
+    } catch {}
+  })
+
+  esClient.onerror = () => {
+    sseStreaming.value = false
+    closeEventSource()
+  }
+}
 </script>
 
 <template>
@@ -201,6 +266,9 @@ watch(
       <a-button type="primary" :loading="streaming" @click="streamFill">{{
         streaming ? 'streaming...' : 'stream'
       }}</a-button>
+      <a-button :loading="sseStreaming" @click="sseStream">{{
+        sseStreaming ? 'sse...' : 'sse stream'
+      }}</a-button>
     </div>
   </div>
 </template>
@@ -248,5 +316,6 @@ watch(
   display: flex;
   justify-content: center;
   padding-top: 12px;
+  gap: 12px;
 }
 </style>

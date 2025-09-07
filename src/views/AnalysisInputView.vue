@@ -72,6 +72,32 @@ function reset() {
   syncFromStore()
   message.success('已恢复默认值')
 }
+
+function download() {
+  const payload = {
+    summary: store.summary,
+    solution: store.solution,
+    alert: store.alert,
+    topos: store.topos,
+    causeSummary: store.causeSummary,
+    causeDetail: store.causeDetail,
+  }
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: 'application/json;charset=utf-8',
+  })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'store.json'
+  document.body.appendChild(link)
+  link.click()
+  setTimeout(() => {
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }, 0)
+  message.success('已开始下载 store.json')
+}
 </script>
 
 <template>
@@ -121,6 +147,7 @@ function reset() {
     <a-space>
       <a-button type="primary" @click="save">save</a-button>
       <a-button @click="reset">reset</a-button>
+      <a-button @click="download">download</a-button>
     </a-space>
   </div>
 </template>

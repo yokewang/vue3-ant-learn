@@ -1,0 +1,11 @@
+{
+  "summary": "# Incident Summary\n\n- Title: <short incident title>\n- Time Window: <start> ~ <end> (timezone)\n- Impact: <affected users/scope/percentage/SLO>\n- Symptoms: <what users observed>\n- Current Status: <mitigated | monitoring | resolved>\n- Owner: <on-call/assignee>\n\n---\n\n## Details\nProvide a high-level overview of what happened and the business/user impact.",
+  "solution": "# Remediation Plan\n\n## Immediate Actions\n1. Contain impact: <steps>\n2. Recover service: <steps>\n\n## Verification\n- Metrics validated: <list>\n- Logs checked: <list>\n\n## Rollback/Workaround\n- Rollback plan: <how>\n- Temporary workaround: <how>\n\n## Follow-ups\n- Owner: <name>\n- ETA: <date>",
+  "alert": "# Alerts & Risks\n\n> Key risks and user communications go here.\n\n- SLO/SLA at risk: <which>\n- Potential blast radius: <which>\n- Customer comms: <channels and message>\n- On-call handoff notes: <what to watch>",
+  "topos": [
+    "graph TD\n  A[Start] --> B{Check}\n  B -- Yes --> C[Do thing]\n  B -- No --> D[Skip]\n  C --> E[End]\n  D --> E[End]",
+    "sequenceDiagram\n  participant User\n  participant API\n  User->>API: Request\n  API-->>User: Response"
+  ],
+  "causeSummary": "# Root Cause Summary\n\nIn 2-3 sentences, concisely describe the root cause and the trigger, and why the system did not automatically recover.",
+  "causeDetail": "# Root Cause Detail\n\n## 5 Whys\n1. Why 1: ...\n2. Why 2: ...\n3. Why 3: ...\n4. Why 4: ...\n5. Why 5: ...\n\n## Evidence\n- Metrics: <screenshots/indicators>\n- Logs: <snippets>\n- Config/Deploy: <changes>\n\n## Contributing Factors\n- Factor 1: ...\n- Factor 2: ...\n\n## Prevention\n- Action 1: ...\n- Action 2: ..."
+}
