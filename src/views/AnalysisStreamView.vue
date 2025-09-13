@@ -276,14 +276,14 @@ function sseStream() {
 <style scoped>
 .page-container {
   padding: 24px;
-  height: 100vh;
+  min-height: 100vh;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow-y: auto;
 }
 .grid-3x2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: repeat(3, auto);
+  grid-template-rows: repeat(3, minmax(260px, auto));
   gap: 12px;
 }
 .cell {

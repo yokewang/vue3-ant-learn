@@ -63,5 +63,6 @@ const links = computed(() =>
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  overflow-y: auto;
 }
 </style>
