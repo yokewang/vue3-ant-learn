@@ -11,6 +11,8 @@ import MermaidTabsView from '../views/MermaidTabsView.vue'
 import AnalysisStreamView from '../views/AnalysisStreamView.vue'
 import AnalysisInputView from '../views/AnalysisInputView.vue'
 import DevTestView from '../views/DevTestView.vue'
+import AlertChartView from '../views/AlertChartView.vue'
+import TimeSeriesChartView from '../views/TimeSeriesChartView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -74,6 +76,16 @@ const router = createRouter({
       path: '/dev-test',
       name: 'dev-test',
       component: DevTestView,
+    },
+    {
+      path: '/alert-chart',
+      name: 'alert-chart',
+      component: AlertChartView,
+    },
+    {
+      path: '/timeseries-chart',
+      name: 'timeseries-chart',
+      component: TimeSeriesChartView,
     },
   ],
 })
