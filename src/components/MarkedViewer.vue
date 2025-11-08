@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, watch, nextTick, ref } from 'vue'
+import { computed, onMounted, onUpdated, watch, nextTick, ref } from 'vue'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
@@ -33,6 +33,7 @@ marked.setOptions({
 const renderedHtml = computed(() => marked.parse(props.source || ''))
 
 const containerEl = ref(null)
+const renderCount = ref(0)
 
 function applyHighlight() {
   if (!containerEl.value) return
@@ -48,15 +49,24 @@ function applyHighlight() {
 
 onMounted(() => {
   applyHighlight()
+  renderCount.value = 1
+})
+
+onUpdated(() => {
+  renderCount.value++
+  console.log(`MarkedViewer 已更新。总渲染次数: ${renderCount.value}`)
 })
 
 watch(renderedHtml, async () => {
+  console.log(`--MarkedViewer 已更新。总渲染次数: ${renderCount.value}`)
+
   await nextTick()
   applyHighlight()
 })
 </script>
 
 <template>
+  <!-- <div>renderCount: {{ renderCount }}</div> -->
   <div ref="containerEl" class="markdown-viewer" v-html="renderedHtml"></div>
 </template>
 

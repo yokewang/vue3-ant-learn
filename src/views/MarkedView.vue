@@ -13,7 +13,7 @@ Type in the editor to preview on the right.
 ## Code
 
 \`\`\`js
-console.log('hello marked');
+console.log('hello hello hello hello hello hello hello hello hello hello marked');
 \`\`\`
 
 [Ant Design Vue](https://antdv.com/)
@@ -43,7 +43,7 @@ function startStream() {
     streamText.value += content[index]
     index += 1
   }
-  streamTimer = setInterval(step, 20)
+  streamTimer = setInterval(step, 1)
 }
 
 onBeforeUnmount(() => {

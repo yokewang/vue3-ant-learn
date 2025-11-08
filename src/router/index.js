@@ -10,6 +10,7 @@ import TabsView from '../views/TabsView.vue'
 import MermaidTabsView from '../views/MermaidTabsView.vue'
 import AnalysisStreamView from '../views/AnalysisStreamView.vue'
 import AnalysisInputView from '../views/AnalysisInputView.vue'
+import DevTestView from '../views/DevTestView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -68,6 +69,11 @@ const router = createRouter({
       path: '/analysis-stream',
       name: 'analysis-stream',
       component: AnalysisStreamView,
+    },
+    {
+      path: '/dev-test',
+      name: 'dev-test',
+      component: DevTestView,
     },
   ],
 })
