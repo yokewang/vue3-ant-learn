@@ -87,7 +87,6 @@ function updateVisibleRange() {
   }
   
   if (allData.value[endIndex]) {
-    // console.log(allData.value[endIndex][0] + 60 * 1000)
     visibleEndTime.value = dayjs(allData.value[endIndex][0] + 60 * 1000).format('YYYY-MM-DD HH:mm:ss')
   } 
   
@@ -204,7 +203,6 @@ const chartOption = ref({
       formatter: function(value) {
         try {
           const date = new Date(value)
-
           if (isNaN(date.getTime())) return ''
           
           const hour = date.getHours()
@@ -212,23 +210,16 @@ const chartOption = ref({
           
           // 0点显示日期（使用 rich 样式）
           if (hour === 0 && minutes === 0) {
-
-            const dateStr = dayjs(date).format('MM/DD')
-            return `{dateStyle|${dateStr}}`
+            return `{dateStyle|${dayjs(date).format('MM/DD')}}`
           }
           
-          // 其他整点显示小时（ECharts 已按间隔筛选）
+          // 整点显示小时（ECharts 已按间隔筛选）
           if (minutes === 0) {
-            const hourStr = hour < 10 ? `0${hour}` : hour
-            return `{hourStyle|${hourStr}}`
-          }else{
-            //用浅色显示分钟信息
-            const minuteStr = minutes < 10 ? `0${minutes}` : minutes
-            return `{minuteStyle|${minuteStr}}`
-
+            return `{hourStyle|${String(hour).padStart(2, '0')}}`
           }
           
-          return ''
+          // 非整点显示分钟信息（浅色）
+          return `{minuteStyle|${String(minutes).padStart(2, '0')}}`
         } catch (e) {
           return ''
         }
@@ -348,7 +339,6 @@ onMounted(async () => {
     if (mockData.length > 0) {
       visibleStartTime.value = dayjs(mockData[0][0]).format('YYYY-MM-DD HH:mm:ss')
       visibleEndTime.value = dayjs(mockData[mockData.length - 1][0] + 60 * 1000).format('YYYY-MM-DD HH:mm:ss')
-      console.log(visibleEndTime.value)
       
       // 初始化时长（7天）
       const timeSpan = mockData[mockData.length - 1][0] - mockData[0][0] + 60 * 1000
