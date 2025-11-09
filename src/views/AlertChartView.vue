@@ -33,7 +33,7 @@ const chartRef = ref(null)
 // 计算默认偏移天数（当前日期减去 2025-11-04），向上取整
 function getDefaultOffsetDays() {
   const now = new Date()
-  const baseDate = new Date('2025-11-04')
+  const baseDate = new Date('2025-10-28')
   return Math.ceil((now.getTime() - baseDate.getTime()) / (24 * 60 * 60 * 1000))
 }
 
@@ -49,6 +49,7 @@ const viewportEndTime = ref(null) // 可视区域的结束时间戳（毫秒）�
 const visibleStartTime = ref('') // 可视区域开始时间的格式化字符串，用于顶部信息显示
 const visibleEndTime = ref('') // 可视区域结束时间的格式化字符串，用于顶部信息显示
 const visibleDuration = ref('') // 可视区域时长，格式化后的字符串（如"3小时"、"2小时48分钟"），用于顶部信息显示
+const currentShowSymbol = ref(null) // 当前是否显示圆点
 
 // 时间工具函数
 function getCurrentHourStart() {
@@ -217,8 +218,19 @@ function updateVisibleRangeAndInfo() {
   } else {
     visibleDuration.value = `${Math.round(visibleMinutes)}分钟`
   }
-}
 
+  // 根据可视区域大小动态调整是否显示圆点（小8小时显示圆点）
+  const showSymbol = visibleHours < 8
+  const targetSynmol = showSymbol ? 'circle' : 'none'
+  if (chartRef.value.chart.getOption().series[0].symbol != targetSynmol){
+    chartRef.value.chart.setOption({
+      series: [{
+        symbol: targetSynmol,
+        symbolSize: showSymbol ? 4 : 0,
+      }],
+    })
+  }
+}
 
 // 更新图表数据
 function updateChartData() {

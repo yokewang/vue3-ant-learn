@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import dayjs from 'dayjs'
 
 // 缓存加载的原始数据
 let cachedRawData = null
@@ -160,6 +161,8 @@ export default [
       // 计算偏移后的时间范围（减去 offset 天，用于查询 CSV 数据）
       const queryStartTime = startTime - offsetMs
       const queryEndTime = endTime - offsetMs
+      console.log('queryStartTime:', dayjs(queryStartTime).format('YYYY-MM-DD HH:mm:ss'))
+      console.log('queryEndTime:', dayjs(queryEndTime).format('YYYY-MM-DD HH:mm:ss'))
       
       // 加载 CSV 数据
       const allData = loadCSVData()
