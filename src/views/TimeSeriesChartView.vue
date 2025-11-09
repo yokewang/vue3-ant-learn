@@ -11,6 +11,7 @@ import {
   TitleComponent,
 } from 'echarts/components'
 import VChart from 'vue-echarts'
+import dayjs from 'dayjs'
 
 // 按需引入 ECharts 模块
 use([
@@ -29,28 +30,23 @@ const visibleEndTime = ref('')
 const visibleDuration = ref('') // 可视区域时长
 const allData = ref([])
 
-// 格式化时间显示
-function formatDateTime(timestamp) {
-  const date = new Date(timestamp)
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
-}
 
 // 生成模拟数据：sine 曲线 + 噪音
 function generateMockData() {
   const data = []
-  const now = Date.now()
-  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000
+  const now = new Date()
+  
+  // 获取本地时区的今天0点
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+  const todayTimestamp = today.getTime()
+  
+  // 7天前（6天前，因为包含今天）
+  const sevenDaysAgo = todayTimestamp - 6 * 24 * 60 * 60 * 1000
+  
   const oneMinute = 60 * 1000
   
-  // 7天 = 10,080 分钟（约10,081个数据点）
-  for (let i = 0; i < 10081; i++) {
+  // 7天 = 10,080 分钟
+  for (let i = 0; i < 1440 * 7; i++) {
     const timestamp = sevenDaysAgo + i * oneMinute
     
     // sine 曲线（周期约为1天）+ 噪音
@@ -87,16 +83,17 @@ function updateVisibleRange() {
   const endIndex = Math.floor((end / 100) * totalDataPoints) - 1
   
   if (allData.value[startIndex]) {
-    visibleStartTime.value = formatDateTime(allData.value[startIndex][0])
+    visibleStartTime.value = dayjs(allData.value[startIndex][0]).format('YYYY-MM-DD HH:mm:ss')
   }
   
   if (allData.value[endIndex]) {
-    visibleEndTime.value = formatDateTime(allData.value[endIndex][0])
-  }
+    // console.log(allData.value[endIndex][0] + 60 * 1000)
+    visibleEndTime.value = dayjs(allData.value[endIndex][0] + 60 * 1000).format('YYYY-MM-DD HH:mm:ss')
+  } 
   
   // 计算可视区域的时间跨度
   if (allData.value[startIndex] && allData.value[endIndex]) {
-    const visibleTimeSpan = allData.value[endIndex][0] - allData.value[startIndex][0]
+    const visibleTimeSpan = allData.value[endIndex][0] - allData.value[startIndex][0] + 60 * 1000
     const visibleDays = visibleTimeSpan / (24 * 60 * 60 * 1000)
     const visibleHours = visibleTimeSpan / (60 * 60 * 1000)
     
@@ -112,18 +109,7 @@ function updateVisibleRange() {
     } else {
       visibleDuration.value = `${Math.round(visibleHours)}小时`
     }
-    
-    // 根据可视区域大小动态调整刻度间隔
-    let newIntervalHours = visibleDays <= 3 ? 3 : 4
-    if (visibleDays <= 2) {
-      newIntervalHours = 2
-    }
-
-    if (currentIntervalHours.value !== newIntervalHours) {
-      currentIntervalHours.value = newIntervalHours
-      updateAxisInterval(newIntervalHours)
-    }
-    
+       
     // 根据可视区域大小动态调整是否显示圆点（小于12小时显示圆点）
     const shouldShowSymbol = visibleHours < 12
     if (currentShowSymbol.value !== shouldShowSymbol) {
@@ -145,33 +131,31 @@ function updateSeriesSymbol(showSymbol) {
   })
 }
 
-// 更新坐标轴间隔配置
-function updateAxisInterval(intervalHours) {
-  console.log(intervalHours)
-  if (!chartRef.value?.chart) return
-  
-  const intervalMs = intervalHours * 3600 * 1000
-  
-  // 使用 setOption 局部更新，保持当前缩放状态
-  chartRef.value.chart.setOption({
-    xAxis: {
-      interval: intervalMs,
-      minInterval: intervalMs,
-      maxInterval: intervalMs,
-    },
+// 处理 dataZoom 事件
+function handleDataZoom() {
+  // 使用 nextTick 和延迟确保图表更新完成后再更新信息
+  // 复位操作时图表状态更新需要时间，所以延迟稍长一些
+  nextTick(() => {
+    setTimeout(() => {
+      updateVisibleRange()
+    }, 200)
   })
 }
 
-// 处理 dataZoom 事件
-function handleDataZoom() {
-  updateVisibleRange()
+// 处理 restore 事件（复位按钮）
+function handleRestore() {
+  // 复位后延迟更新信息，确保图表完全恢复
+  // 复位操作需要更多时间来完成状态更新
+  setTimeout(() => {
+    updateVisibleRange()
+  }, 300)
 }
 
 // ECharts 配置
 const chartOption = ref({
   title: {
     text: '最近7天时间序列数据',
-    subtext: '共 10,081 个数据点（每分钟一个）',
+    subtext: '共 10,080 个数据点（每分钟一个）',
     left: 'center',
   },
   tooltip: {
@@ -198,11 +182,7 @@ const chartOption = ref({
   xAxis: {
     type: 'time',
     boundaryGap: false,
-    // 强制主刻度间隔：4小时（使用 interval）
-    interval: 3600 * 1000 * 4, // 4小时
-    minInterval: 3600 * 1000 * 4,
-    maxInterval: 3600 * 1000 * 4,
-    // 主刻度线（0点用粗线，其他时间用细线）
+    splitNumber: 24,
     axisTick: {
       show: true,
       length: 6,
@@ -220,12 +200,11 @@ const chartOption = ref({
         type: 'solid',
       },
     },
-    // 坐标轴标签：0点显示日期（粗体大字），其他整点显示小时（细字）
-    // 动态间隔：<3天时每2小时，>=3天时每4小时
     axisLabel: {
       formatter: function(value) {
         try {
           const date = new Date(value)
+
           if (isNaN(date.getTime())) return ''
           
           const hour = date.getHours()
@@ -233,13 +212,20 @@ const chartOption = ref({
           
           // 0点显示日期（使用 rich 样式）
           if (hour === 0 && minutes === 0) {
-            const dateStr = date.toISOString().slice(5, 10).replace(/-/g, '/')
+
+            const dateStr = dayjs(date).format('MM/DD')
             return `{dateStyle|${dateStr}}`
           }
           
           // 其他整点显示小时（ECharts 已按间隔筛选）
           if (minutes === 0) {
-            return `{hourStyle|${hour}}`
+            const hourStr = hour < 10 ? `0${hour}` : hour
+            return `{hourStyle|${hourStr}}`
+          }else{
+            //用浅色显示分钟信息
+            const minuteStr = minutes < 10 ? `0${minutes}` : minutes
+            return `{minuteStyle|${minuteStr}}`
+
           }
           
           return ''
@@ -259,9 +245,15 @@ const chartOption = ref({
           lineHeight: 22,
         },
         hourStyle: {
-          fontSize: 11,
+          fontSize: 12,
           fontWeight: 'normal',
           color: '#666',
+          lineHeight: 18,
+        },
+        minuteStyle: {
+          fontSize: 9,
+          fontWeight: 'normal',
+          color: '#999',
           lineHeight: 18,
         },
       },
@@ -354,11 +346,12 @@ onMounted(async () => {
     
     // 初始化可视区域时间
     if (mockData.length > 0) {
-      visibleStartTime.value = formatDateTime(mockData[0][0])
-      visibleEndTime.value = formatDateTime(mockData[mockData.length - 1][0])
+      visibleStartTime.value = dayjs(mockData[0][0]).format('YYYY-MM-DD HH:mm:ss')
+      visibleEndTime.value = dayjs(mockData[mockData.length - 1][0] + 60 * 1000).format('YYYY-MM-DD HH:mm:ss')
+      console.log(visibleEndTime.value)
       
       // 初始化时长（7天）
-      const timeSpan = mockData[mockData.length - 1][0] - mockData[0][0]
+      const timeSpan = mockData[mockData.length - 1][0] - mockData[0][0] + 60 * 1000
       const days = Math.floor(timeSpan / (24 * 60 * 60 * 1000))
       const hours = Math.round((timeSpan % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000))
       if (hours > 0) {
@@ -374,6 +367,8 @@ onMounted(async () => {
     setTimeout(() => {
       if (chartRef.value?.chart) {
         chartRef.value.chart.on('datazoom', handleDataZoom)
+        // 监听 restore 事件（复位按钮）
+        chartRef.value.chart.on('restore', handleRestore)
         // 初始化时计算一次可视区域，设置正确的间隔
         updateVisibleRange()
       }
@@ -423,17 +418,13 @@ onMounted(async () => {
         <a-card title="图表特性说明" size="small" :bordered="true">
           <a-descriptions :column="1" size="small" bordered>
             <a-descriptions-item label="数据范围">
-              显示最近7天的时间序列数据，共 10,081 个数据点（每分钟一个数据点）
+              显示最近7天的时间序列数据，共 10,080 个数据点（每分钟一个数据点）
             </a-descriptions-item>
             <a-descriptions-item label="交互功能">
               支持鼠标滚轮缩放、拖拽平移、底部 Zoom Slider 滑块调整可视范围
             </a-descriptions-item>
             <a-descriptions-item label="动态刻度间隔">
-              <ul style="margin: 0; padding-left: 20px;">
-                <li>区间长度 ≤ 2天：时间轴刻度间隔为 1小时</li>
-                <li>区间长度 ≤ 3天：时间轴刻度间隔为 2小时</li>
-                <li>区间长度 > 3天：时间轴刻度间隔为 4小时</li>
-              </ul>
+              刻度间隔会根据可视区域范围自动调整，确保时间标签清晰可读
             </a-descriptions-item>
             <a-descriptions-item label="圆点显示规则">
               <ul style="margin: 0; padding-left: 20px;">
@@ -443,9 +434,9 @@ onMounted(async () => {
             </a-descriptions-item>
             <a-descriptions-item label="时间标签">
               <ul style="margin: 0; padding-left: 20px;">
-                <li>0点显示日期标签（蓝色背景，粗体）</li>
-                <li>其他整点显示小时标签（灰色文字）</li>
-                <li>刻度标签会根据可视范围自动调整显示密度</li>
+                <li>0点（每天的开始）显示日期标签，格式：月/日（如 11/03），蓝色背景粗体显示</li>
+                <li>其他整点（根据刻度间隔：1小时/2小时/4小时）显示小时标签，格式：小时（如 2、4、8），灰色文字</li>
+                <li>刻度间隔根据可视区域范围自动选择（1小时/2小时/4小时），确保标签清晰不重叠</li>
               </ul>
             </a-descriptions-item>
             <a-descriptions-item label="可视区域信息">
