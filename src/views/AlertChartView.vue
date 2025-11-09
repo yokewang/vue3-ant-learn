@@ -12,6 +12,7 @@ import {
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { message } from 'ant-design-vue'
+import dayjs from 'dayjs'
 
 // 按需引入 ECharts 模块
 use([
@@ -36,43 +37,18 @@ function getDefaultOffsetDays() {
   return Math.ceil((now.getTime() - baseDate.getTime()) / (24 * 60 * 60 * 1000))
 }
 
-const offsetDays = ref(getDefaultOffsetDays())
-const displayHours = ref(3)
-const allData = ref([])
-const lastUpdateMinute = ref(null)
-const isUserInteracted = ref(false)
-const pauseTimestamp = ref(null)
-const chartStartTime = ref(null)
-const viewportStartTime = ref(null)
-const viewportEndTime = ref(null)
-
-// 4小时时间戳常量（用于判断缩放级别）
-const FOUR_HOURS_MS = 4 * 3600 * 1000
-
-// X轴标签格式化函数
-// 格式化 (Zoomed-Out, > 4h): 只显示小时
-const zoomedOutFormatter = (value) => {
-  const date = new Date(value)
-  const minutes = date.getMinutes()
-  // 只显示整点标签
-  if (minutes === 0) {
-    return `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:00`
-  }
-  return ''
-}
-
-// 格式化 (Zoomed-In, <= 4h): 区分整点和分钟
-const zoomedInFormatter = (value) => {
-  const date = new Date(value)
-  const minutes = date.getMinutes()
-  
-  if (minutes === 0) {
-    // 整点, e.g., "14:00"
-    return `${String(date.getHours()).padStart(2, '0')}:00`
-  }
-  // 非整点, e.g., "10", "20"
-  return String(minutes)
-}
+const offsetDays = ref(getDefaultOffsetDays()) // 数据偏移天数，用于调整数据的时间基准
+const displayHours = ref(3) // 默认显示的小时数，控制可视区域的时间跨度
+const allData = ref([]) // 所有告警数据，格式为 [[timestamp, count], ...]
+const lastUpdateMinute = ref(null) // 最后一次更新的分钟时间戳，用于增量数据获取
+const isUserInteracted = ref(false) // 用户是否手动操作了图表（缩放/平移），用于区分自动模式和用户交互模式
+const pauseTimestamp = ref(null) // 暂停自动刷新时的时间戳，用于恢复时补齐缺失数据
+const chartStartTime = ref(null) // 图表X轴的起始时间戳（毫秒），用于计算X轴范围
+const viewportStartTime = ref(null) // 可视区域的开始时间戳（毫秒），用于自动模式下的可视范围管理
+const viewportEndTime = ref(null) // 可视区域的结束时间戳（毫秒），用于自动模式下的可视范围管理
+const visibleStartTime = ref('') // 可视区域开始时间的格式化字符串，用于顶部信息显示
+const visibleEndTime = ref('') // 可视区域结束时间的格式化字符串，用于顶部信息显示
+const visibleDuration = ref('') // 可视区域时长，格式化后的字符串（如"3小时"、"2小时48分钟"），用于顶部信息显示
 
 // 时间工具函数
 function getCurrentHourStart() {
@@ -132,18 +108,21 @@ async function fetchAlertData(startTime, endTime, offset) {
 function mergeData(newDataPoints) {
   if (newDataPoints.length === 0) return
   
-  const dataMap = new Map(allData.value.map(([ts, val]) => [ts, val]))
+  // 获取新数据的起始时间戳（第一个数据点的时间戳）
+  const newDataStartTimestamp = newDataPoints[0][0]
   
-  for (const [timestamp, count] of newDataPoints) {
-    dataMap.set(timestamp, count)
+  // 从 allData 中删除时间戳 >= newDataStartTimestamp 的数据点
+  // 由于 allData 是按时间戳排序的，找到第一个 >= newDataStartTimestamp 的索引
+  const cutIndex = allData.value.findIndex(([timestamp]) => timestamp >= newDataStartTimestamp)
+  
+  // 如果找到了切分点，直接截断数组（保留前面的数据）
+  if (cutIndex !== -1) {
+    allData.value.length = cutIndex
   }
   
-  const merged = Array.from(dataMap.entries())
-  merged.sort((a, b) => a[0] - b[0])
+  // 直接将新数据追加到数组后面（保持数组引用不变）
+  allData.value.push(...newDataPoints)
   
-  // 只保留最近一周的数据
-  const oneWeekAgo = getCurrentMinuteStart() - 7 * 24 * 3600 * 1000
-  allData.value = merged.filter(([ts]) => ts >= oneWeekAgo)
   updateChartData()
 }
 
@@ -176,169 +155,115 @@ function createDataZoomConfig(startPercent, endPercent) {
   const clampedEnd = Math.max(clampedStart, Math.min(100, endPercent))
   return [
     { type: 'inside', start: clampedStart, end: clampedEnd },
-    { type: 'slider', start: clampedStart, end: clampedEnd, height: 20, bottom: 10 },
+    { type: 'slider', start: clampedStart, end: clampedEnd, height: 40, bottom: 10 },
   ]
 }
 
-// 获取可视范围（返回时间戳范围，单位：毫秒）
-function getViewportRange() {
-  if (!isUserInteracted.value && viewportStartTime.value !== null && viewportEndTime.value !== null) {
-    return viewportEndTime.value - viewportStartTime.value
-  }
+// 更新可视区域时间范围
+function updateVisibleRangeAndInfo() {
+  if (!chartRef.value?.chart) return
   
-  if (isUserInteracted.value && chartRef.value?.chart) {
-    const option = chartRef.value.chart.getOption()
-    if (option?.xAxis?.[0]?.min && option?.xAxis?.[0]?.max && option?.dataZoom?.[0]) {
-      const { min: xAxisMin, max: xAxisMax } = option.xAxis[0]
-      const { start = 0, end = 100 } = option.dataZoom[0]
-      const totalRange = xAxisMax - xAxisMin
-      return (totalRange * (end - start)) / 100
+  const option = chartRef.value.chart.getOption()
+  const xAxis = option.xAxis?.[0]
+  const dataZoom = option.dataZoom?.[0]
+  
+  if (!xAxis || !dataZoom) return
+  
+  // 获取X轴的时间范围
+  const xAxisMin = xAxis.min
+  const xAxisMax = xAxis.max
+  
+  if (!xAxisMin || !xAxisMax) return
+  
+  // 获取dataZoom的start和end百分比
+  const start = dataZoom.start || 0
+  const end = dataZoom.end || 100
+  
+  // 计算可视区域的时间范围（基于X轴的时间范围）
+  const totalRange = xAxisMax - xAxisMin
+  const visibleStartTimestamp = xAxisMin + (totalRange * start) / 100
+  const visibleEndTimestamp = xAxisMin + (totalRange * end) / 100
+  //update viewportStartTime and viewportEndTime
+  viewportStartTime.value = visibleStartTimestamp
+  viewportEndTime.value = visibleEndTimestamp
+  
+  // 格式化时间显示
+  visibleStartTime.value = dayjs(visibleStartTimestamp).format('YYYY-MM-DD HH:mm:ss')
+  visibleEndTime.value = dayjs(visibleEndTimestamp).format('YYYY-MM-DD HH:mm:ss')
+  
+  // 计算可视区域的时间跨度
+  const visibleTimeSpan = visibleEndTimestamp - visibleStartTimestamp
+  const visibleDays = visibleTimeSpan / (24 * 60 * 60 * 1000)
+  const visibleHours = visibleTimeSpan / (60 * 60 * 1000)
+  const visibleMinutes = visibleTimeSpan / (60 * 1000)
+  
+  // 格式化时长显示（精确到分钟）
+  if (visibleDays >= 1) {
+    const days = Math.floor(visibleDays)
+    const hours = Math.floor((visibleTimeSpan % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000))
+    if (hours > 0) {
+      visibleDuration.value = `${days}天${hours}小时`
+    } else {
+      visibleDuration.value = `${days}天`
     }
-  }
-  return 0
-}
-
-// 从 dataZoom 事件参数中获取可视时间范围
-function getVisibleTimeRangeFromEvent(params) {
-  let startValue, endValue
-  
-  // 尝试从事件参数中获取精确的 start/end 时间戳
-  if (params.batch && params.batch.length > 0) {
-    startValue = params.batch[0].startValue
-    endValue = params.batch[0].endValue
-  } else if (params.startValue !== undefined && params.endValue !== undefined) {
-    startValue = params.startValue
-    endValue = params.endValue
-  } else {
-    // 回退：从图表实例获取当前可视范围
-    if (!chartRef.value?.chart) return null
-    const option = chartRef.value.chart.getOption()
-    if (!option?.xAxis?.[0]?.min || !option?.xAxis?.[0]?.max || !option?.dataZoom?.[0]) {
-      return null
-    }
-    const { min: xAxisMin, max: xAxisMax } = option.xAxis[0]
-    const { start = 0, end = 100 } = option.dataZoom[0]
-    const totalRange = xAxisMax - xAxisMin
-    startValue = xAxisMin + (totalRange * start) / 100
-    endValue = xAxisMin + (totalRange * end) / 100
-  }
-  
-  return { startValue, endValue }
-}
-
-// 根据可视时间范围动态更新 X 轴配置
-function updateXAxisByVisibleRange(visibleSpan) {
-  if (visibleSpan <= FOUR_HOURS_MS) {
-    // --- 应用 Zoomed-In 配置 ---
-    // (范围 <= 4 小时)
-    chartOption.value = {
-      ...chartOption.value,
-      xAxis: {
-        ...chartOption.value.xAxis,
-        interval: 600 * 1000, // 主刻度: 10 分钟
-        minInterval: 600 * 1000,
-        maxInterval: 600 * 1000,
-        axisLabel: {
-          ...chartOption.value.xAxis.axisLabel,
-          formatter: zoomedInFormatter,
-        },
-        minorTick: {
-          ...chartOption.value.xAxis.minorTick,
-          show: false, // 隐藏次刻度 (因为主刻度已是10分钟)
-        },
-        minorSplitLine: {
-          ...chartOption.value.xAxis.minorSplitLine,
-          show: false, // 隐藏次刻度线
-        },
-        minorTickLabel: {
-          ...chartOption.value.xAxis.minorTickLabel,
-          show: false, // 隐藏次刻度标签
-        },
-      },
+  } else if (visibleHours >= 1) {
+    const hours = Math.floor(visibleHours)
+    const minutes = Math.floor((visibleTimeSpan % (60 * 60 * 1000)) / (60 * 1000))
+    if (minutes > 0) {
+      visibleDuration.value = `${hours}小时${minutes}分钟`
+    } else {
+      visibleDuration.value = `${hours}小时`
     }
   } else {
-    // --- 应用 Zoomed-Out 配置 ---
-    // (范围 > 4 小时)
-    chartOption.value = {
-      ...chartOption.value,
-      xAxis: {
-        ...chartOption.value.xAxis,
-        interval: 3600 * 1000, // 主刻度: 1 小时
-        minInterval: 3600 * 1000,
-        maxInterval: 3600 * 1000,
-        axisLabel: {
-          ...chartOption.value.xAxis.axisLabel,
-          formatter: zoomedOutFormatter,
-        },
-        minorTick: {
-          ...chartOption.value.xAxis.minorTick,
-          show: true, // 显示10分钟次刻度线
-        },
-        minorSplitLine: {
-          ...chartOption.value.xAxis.minorSplitLine,
-          show: true, // 显示10分钟次网格
-        },
-        minorTickLabel: {
-          ...chartOption.value.xAxis.minorTickLabel,
-          show: false, // 次刻度不显示标签（只有线）
-        },
-      },
-    }
+    visibleDuration.value = `${Math.round(visibleMinutes)}分钟`
   }
 }
+
 
 // 更新图表数据
 function updateChartData() {
-  const viewportRange = getViewportRange()
-  // 可视范围 < 4小时时，显示圆点
-  const isSmallRange = viewportRange > 0 && viewportRange < 4 * 3600 * 1000
-  
+  console.log(allData.value.length)
+  console.log('isUserInteracted:',isUserInteracted.value)
   const seriesConfig = {
     ...chartOption.value.series[0],
     data: allData.value,
-    symbol: isSmallRange ? 'circle' : 'none',
-    symbolSize: isSmallRange ? 4 : 0,
-    smooth: !isSmallRange,
-    sampling: isSmallRange ? false : 'lttb',
   }
   
   if (!isUserInteracted.value && chartStartTime.value !== null) {
+    console.log('自动模式下，更新可视区间')
+    //自动模式下，更新图表数据
+    //计算并更新可视范围（完整的N小时，从整点开始到整点结束）
     updateViewportRange()
-    
-    if (viewportStartTime.value === null || viewportEndTime.value === null) return
-    
-    const timeRange = getXAxisTimeRange()
-    if (!timeRange || timeRange.max - timeRange.min === 0) return
-    
-    const startPercent = ((viewportStartTime.value - timeRange.min) / (timeRange.max - timeRange.min)) * 100
-    const endPercent = ((viewportEndTime.value - timeRange.min) / (timeRange.max - timeRange.min)) * 100
-    
-    // 先根据可视范围更新 X 轴配置
-    if (viewportRange > 0) {
-      updateXAxisByVisibleRange(viewportRange)
-    }
-    
-    // 然后设置 X 轴的 min 和 max（保留已更新的配置）
-    chartOption.value = {
-      ...chartOption.value,
-      xAxis: { 
-        ...chartOption.value.xAxis, 
-        min: timeRange.min, 
-        max: timeRange.max 
-      },
-      dataZoom: createDataZoomConfig(startPercent, endPercent),
-      series: [seriesConfig],
-    }
-  } else {
-    // 用户操作时，也需要更新 X 轴配置和系列配置
-    if (viewportRange > 0) {
-      updateXAxisByVisibleRange(viewportRange)
-    }
-    chartOption.value = { 
-      ...chartOption.value, 
-      series: [seriesConfig] 
-    }
   }
+  
+  //更新图表数据
+  const timeRange = getXAxisTimeRange()
+  console.log(timeRange.min, timeRange.max)
+  // console.log(dayjs(timeRange.min).format('YYYY-MM-DD HH:mm:ss'))
+  // console.log(dayjs(timeRange.max).format('YYYY-MM-DD HH:mm:ss'))
+  // console.log(dayjs(viewportStartTime.value).format('YYYY-MM-DD HH:mm:ss'))
+  // console.log(dayjs(viewportEndTime.value).format('YYYY-MM-DD HH:mm:ss'))
+  
+  const startPercent = ((viewportStartTime.value - timeRange.min) / (timeRange.max - timeRange.min)) * 100
+  const endPercent = ((viewportEndTime.value - timeRange.min) / (timeRange.max - timeRange.min)) * 100
+  
+  chartOption.value = {
+    ...chartOption.value,
+    xAxis: { 
+      ...chartOption.value.xAxis, 
+      min: timeRange.min, 
+      max: timeRange.max 
+    },
+    dataZoom: createDataZoomConfig(startPercent, endPercent),
+    series: [seriesConfig],
+  }
+  
+  // 更新可视区域信息
+  nextTick(() => {
+    setTimeout(() => {
+      updateVisibleRangeAndInfo()
+    }, 100)
+  })
 }
 
 // 更新最近一分钟的数据（动态更新）
@@ -354,17 +279,11 @@ async function updateLatestMinute() {
   if (latestData.length > 0) {
     mergeData(latestData)
     lastUpdateMinute.value = currentMinute
-  } else {
+    console.log('更新最近一分钟的数据')
     updateChartData()
-  }
+  } 
 }
 
-// 检查并更新X轴范围（当到达整点时，平移可视范围）
-function checkAndUpdateXAxisMax() {
-  if (!isUserInteracted.value) {
-    updateChartData()
-  }
-}
 
 // 计算X轴时间范围
 function getXAxisTimeRange() {
@@ -376,7 +295,7 @@ function getXAxisTimeRange() {
 }
 
 // 重置到显示全范围（完整的N小时，从整点开始到整点结束）
-function resetToFullRange(animate = false) {
+function resetToFullRange() {
   if (chartStartTime.value === null) return
   
   viewportStartTime.value = null
@@ -397,29 +316,19 @@ function resetToFullRange(animate = false) {
     xAxis: { ...chartOption.value.xAxis, min: timeRange.min, max: timeRange.max },
   }
   
-  if (animate && chartRef.value?.chart) {
-    chartRef.value.chart.dispatchAction({
-      type: 'dataZoom',
-      start: dataZoomConfig.start,
-      end: dataZoomConfig.end,
-      animation: { duration: 1000, easing: 'cubicOut' },
-    })
-  } else {
-    chartOption.value = {
-      ...chartOption.value,
-      dataZoom: createDataZoomConfig(startPercent, endPercent),
-    }
+  chartOption.value = {
+    ...chartOption.value,
+    dataZoom: createDataZoomConfig(startPercent, endPercent),
   }
   
   isUserInteracted.value = false
   showReset.value = false
   
-  // 重置后，根据新的可视范围更新 X 轴配置
+  // 更新可视区域信息
   nextTick(() => {
-    const viewportRange = getViewportRange()
-    if (viewportRange > 0) {
-      updateXAxisByVisibleRange(viewportRange)
-    }
+    setTimeout(() => {
+      updateVisibleRangeAndInfo()
+    }, 300)
   })
 }
 
@@ -428,47 +337,13 @@ function handleDataZoom(params) {
   isUserInteracted.value = true
   showReset.value = true
   
-  // 获取可视时间范围并更新 X 轴配置
-  const timeRange = getVisibleTimeRangeFromEvent(params || {})
-  if (timeRange) {
-    const visibleSpan = timeRange.endValue - timeRange.startValue
-    // 根据可视范围动态更新 X 轴配置
-    updateXAxisByVisibleRange(visibleSpan)
-    // 更新系列配置（显示/隐藏圆点等）
-    const isSmallRange = visibleSpan < 4 * 3600 * 1000
-    chartOption.value = {
-      ...chartOption.value,
-      series: [{
-        ...chartOption.value.series[0],
-        data: allData.value,
-        symbol: isSmallRange ? 'circle' : 'none',
-        symbolSize: isSmallRange ? 4 : 0,
-        smooth: !isSmallRange,
-        sampling: isSmallRange ? false : 'lttb',
-      }],
-    }
-  } else {
-    // 如果无法从事件获取，延迟一下让图表更新完成后再获取
-    nextTick(() => {
-      const viewportRange = getViewportRange()
-      if (viewportRange > 0) {
-        updateXAxisByVisibleRange(viewportRange)
-        // 更新系列配置（显示/隐藏圆点等）
-        const isSmallRange = viewportRange < 4 * 3600 * 1000
-        chartOption.value = {
-          ...chartOption.value,
-          series: [{
-            ...chartOption.value.series[0],
-            data: allData.value,
-            symbol: isSmallRange ? 'circle' : 'none',
-            symbolSize: isSmallRange ? 4 : 0,
-            smooth: !isSmallRange,
-            sampling: isSmallRange ? false : 'lttb',
-          }],
-        }
-      }
-    })
-  }
+  // 使用 nextTick 和延迟确保图表更新完成后再更新信息
+  nextTick(() => {
+    setTimeout(() => {
+      // 更新可视区域信息
+      updateVisibleRangeAndInfo()
+    }, 200)
+  })
 }
 
 // 处理复位按钮点击
@@ -524,12 +399,25 @@ async function initData() {
     }
     
     updateChartData()
+
     await nextTick()
     resetToFullRange(false)
     
-    if (autoRefresh.value) {
-      await updateLatestMinute()
-    }
+    // 等待 DOM 更新后绑定事件（参考 TimeSeriesChartView.vue 的实现方式）
+    await nextTick()
+    
+    setTimeout(() => {
+      if (chartRef.value?.chart) {
+        // 确保事件监听已绑定
+        chartRef.value.chart.on('datazoom', handleDataZoom)
+        
+        // 监听 restore 事件（复位按钮）
+        chartRef.value.chart.on('restore', handleRestore)
+        
+        // 初始化时计算一次可视区域
+        updateVisibleRangeAndInfo()
+      }
+    }, 500)
   } catch (error) {
     console.error('数据初始化失败:', error)
     message.error('数据初始化失败，请稍后重试')
@@ -539,7 +427,6 @@ async function initData() {
 }
 
 let pollTimer = null
-let updateTimer = null
 
 // 启动15秒轮询
 function startPolling() {
@@ -560,24 +447,6 @@ function stopPolling() {
   }
 }
 
-// 启动每秒检查（用于整点时的X轴更新）
-function startUpdateTimer() {
-  if (updateTimer) return
-  
-  updateTimer = setInterval(() => {
-    if (autoRefresh.value && new Date().getSeconds() === 0) {
-      checkAndUpdateXAxisMax()
-    }
-  }, 1000)
-}
-
-// 停止更新定时器
-function stopUpdateTimer() {
-  if (updateTimer) {
-    clearInterval(updateTimer)
-    updateTimer = null
-  }
-}
 
 // ECharts 配置
 const chartOption = ref({
@@ -606,70 +475,78 @@ const chartOption = ref({
   xAxis: {
     type: 'time',
     boundaryGap: false,
-    minInterval: 3600000, // 主刻度间隔：1小时（3600000毫秒）
-    maxInterval: 3600000, // 主刻度间隔：1小时
-    splitNumber: 4, // 显示4个主刻度（从-3小时到+1小时，共4小时范围，但只显示3小时数据）
-    // 主刻度网格线（每小时）
-    splitLine: {
-      show: true,
-      lineStyle: {
-        color: '#d9d9d9', // 大刻度颜色
-        width: 2, // 大刻度线宽
-        type: 'solid',
-      },
-    },
-    // 主刻度标记
+    splitNumber: 24,
     axisTick: {
       show: true,
-      alignWithLabel: true,
+      length: 6,
       lineStyle: {
-        color: '#333',
-        width: 2,
-      },
-      length: 8,
-    },
-    // 次刻度（每10分钟，每个小时之间5个次刻度）
-    minorTick: {
-      show: true,
-      splitNumber: 6, // 每个主刻度之间5个次刻度（对应10分钟间隔：10, 20, 30, 40, 50分钟）
-      length: 4,
-      lineStyle: {
-        color: '#999',
+        color: '#666',
         width: 1,
       },
     },
-    // 次刻度网格线
-    minorSplitLine: {
+    // 主刻度网格线
+    splitLine: {
       show: true,
-      splitNumber: 6, // 每个主刻度之间5条次刻度网格线（对应10分钟间隔）
       lineStyle: {
-        color: '#f0f0f0', // 小刻度颜色
-        width: 1, // 小刻度线宽
+        color: '#e5e5e5',
+        width: 1,
         type: 'solid',
       },
     },
-    // 次刻度标签（默认不显示，只在 zoomed-out 状态下显示线）
-    minorTickLabel: {
-      show: false, // 默认不显示标签，只有线
-      splitNumber: 6, // 每个主刻度之间5个次刻度标签
-      formatter: (value) => {
-        const date = new Date(value)
-        const minutes = date.getMinutes()
-        // 只显示10分钟刻度的标签（10, 20, 30, 40, 50分钟）
-        if (minutes % 10 === 0 && minutes !== 0) {
-          return `${String(minutes).padStart(2, '0')}`
-        }
-        return ''
-      },
-      color: '#999',
-    },
-    // 主刻度标签（每小时）- 使用默认的 zoomedOutFormatter
     axisLabel: {
-      formatter: zoomedOutFormatter,
-      color: '#333',
+      formatter: function(value) {
+        try {
+          const date = new Date(value)
+          if (isNaN(date.getTime())) return ''
+          
+          const hour = date.getHours()
+          const minutes = date.getMinutes()
+          
+          // 0点显示日期（使用 rich 样式）
+          if (hour === 0 && minutes === 0) {
+            return `{dateStyle|${dayjs(date).format('MM/DD')}}`
+          }
+          
+          // 整点显示小时（ECharts 已按间隔筛选）
+          if (minutes === 0) {
+            return `{hourStyle|${String(hour).padStart(2, '0')}}`
+          }
+          
+          // 非整点显示分钟信息（浅色）
+          return `{minuteStyle|${String(minutes).padStart(2, '0')}}`
+        } catch (e) {
+          return ''
+        }
+      },
+      // 使用富文本样式区分日期和小时
+      rich: {
+        dateStyle: {
+          fontSize: 14,
+          fontWeight: 'bold',
+          color: '#1890ff',
+          backgroundColor: '#e6f7ff',
+          padding: [4, 8, 4, 8],
+          borderRadius: 4,
+          lineHeight: 22,
+        },
+        hourStyle: {
+          fontSize: 12,
+          fontWeight: 'normal',
+          color: '#666',
+          lineHeight: 18,
+        },
+        minuteStyle: {
+          fontSize: 9,
+          fontWeight: 'normal',
+          color: '#999',
+          lineHeight: 18,
+        },
+      },
+      showMinLabel: true,
+      showMaxLabel: true,
+      hideOverlap: false,
     },
-    // 默认使用 interval 来控制主刻度间隔
-    interval: 3600 * 1000, // 默认主刻度: 1 小时
+    // 坐标轴线
     axisLine: {
       show: true,
       lineStyle: {
@@ -695,7 +572,7 @@ const chartOption = ref({
       type: 'slider',
       start: 0,
       end: 100,
-      height: 20,
+      height: 40,
       bottom: 10,
     },
   ],
@@ -707,7 +584,7 @@ const chartOption = ref({
       restore: {},
       saveAsImage: {},
     },
-    right: 10,
+    right: 0,
     top: 10,
   },
   series: [
@@ -728,23 +605,10 @@ const chartOption = ref({
   ],
 })
 
-// 图表准备就绪时的回调
-function onChartReady(chartInstance) {
-  // 监听 dataZoom 事件
-  chartInstance.on('dataZoom', (params) => {
-    handleDataZoom(params)
-  })
-  
-  // 初始加载后，手动调用一次以设置正确的初始缩放状态
-  nextTick(() => {
-    const viewportRange = getViewportRange()
-    if (viewportRange > 0) {
-      updateXAxisByVisibleRange(viewportRange)
-    } else {
-      // 如果没有可视范围信息，使用默认的 zoomed-out 配置
-      updateXAxisByVisibleRange(FOUR_HOURS_MS + 1)
-    }
-  })
+// 处理 restore 事件（图表工具栏的复位按钮）
+function handleRestore() {
+  // 与页面上的"复位按钮"行为保持一致，调用相同的复位函数
+  resetToFullRange(true)
 }
 
 onMounted(async () => {
@@ -753,13 +617,10 @@ onMounted(async () => {
   if (autoRefresh.value) {
     startPolling()
   }
-  
-  startUpdateTimer()
 })
 
 onBeforeUnmount(() => {
   stopPolling()
-  stopUpdateTimer()
 })
 </script>
 
@@ -794,14 +655,14 @@ onBeforeUnmount(() => {
           </a-space>
           <a-switch
             v-model:checked="autoRefresh"
-            checked-children="自动刷新"
+            checked-children="自动刷新（15s）"
             un-checked-children="手动"
             @change="handleAutoRefreshChange"
           />
           <a-button
-            v-if="showReset"
             size="small"
             type="primary"
+            :disabled="!showReset"
             @click="handleReset"
           >
             复位
@@ -814,6 +675,26 @@ onBeforeUnmount(() => {
           </a-button>
         </a-space>
       </template>
+      <!-- 可视区域时间范围 -->
+      <div class="visible-range-info">
+        <a-space size="large">
+          <div class="time-label">
+            <span class="label-title">可视区域开始时间：</span>
+            <a-tag color="blue" style="font-size: 14px;">{{ visibleStartTime }}</a-tag>
+          </div>
+          <div class="time-label">
+            <span class="label-title">可视区域结束时间：</span>
+            <a-tag color="green" style="font-size: 14px;">{{ visibleEndTime }}</a-tag>
+          </div>
+          <div class="time-label">
+            <span class="label-title">区间长度：</span>
+            <a-tag color="orange" style="font-size: 14px;">{{ visibleDuration }}</a-tag>
+          </div>
+        </a-space>
+      </div>
+      
+      <a-divider style="margin: 16px 0;" />
+      
       <a-spin :spinning="loading" tip="加载中...">
         <div class="chart-wrapper">
           <v-chart
@@ -821,7 +702,6 @@ onBeforeUnmount(() => {
             class="chart"
             :option="chartOption"
             autoresize
-            @chart-ready="onChartReady"
           />
         </div>
       </a-spin>
@@ -846,6 +726,24 @@ onBeforeUnmount(() => {
   height: 400px;
 }
 
+.visible-range-info {
+  padding: 12px 16px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  border: 1px solid #e8e8e8;
+}
+
+.time-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label-title {
+  font-weight: 500;
+  color: #595959;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .page-container {
@@ -854,6 +752,15 @@ onBeforeUnmount(() => {
 
   .chart {
     height: 300px;
+  }
+  
+  .visible-range-info {
+    padding: 8px 12px;
+  }
+  
+  .time-label {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>
