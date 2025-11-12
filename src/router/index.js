@@ -13,6 +13,7 @@ import AnalysisInputView from '../views/AnalysisInputView.vue'
 import DevTestView from '../views/DevTestView.vue'
 import AlertChartView from '../views/AlertChartView.vue'
 import TimeSeriesChartView from '../views/TimeSeriesChartView.vue'
+import AlertChartExView from '../views/AlertChartExView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -86,6 +87,11 @@ const router = createRouter({
       path: '/timeseries-chart',
       name: 'timeseries-chart',
       component: TimeSeriesChartView,
+    },
+    {
+      path: '/alert-chart-ex',
+      name: 'alert-chart-ex',
+      component: AlertChartExView,
     },
   ],
 })

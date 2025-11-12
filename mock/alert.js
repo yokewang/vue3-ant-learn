@@ -61,27 +61,25 @@ function loadCSVData() {
   }
 }
 
-// 按分钟聚合数据
-// 聚合规则：零分钟的数据包括零分钟开始到一分钟之间的，不包括一分钟
-// 即 [00:00:00, 00:01:00) 属于 00:00 这一分钟
-function aggregateByMinute(data) {
-  const minuteMap = new Map()
-  
+// 按指定分钟聚合数据，intervalMinutes 为正整数
+// 聚合区间规则：每个区间包含 [起始时间, 起始时间 + interval) 的数据，左闭右开
+// 桶对齐到自然时间边界（例如 10 分钟粒度则对齐 00、10、20 分钟）
+function aggregateByInterval(data, intervalMinutes = 1) {
+  const interval = Number.isInteger(intervalMinutes) && intervalMinutes > 0 ? intervalMinutes : 1
+  const intervalMs = interval * 60 * 1000
+  const bucketMap = new Map()
+
   for (const item of data) {
-    // 将时间戳向下取整到分钟（毫秒）
-    // 例如：00:00:00 到 00:00:59.999 都属于 00:00 这一分钟
-    // 例如：00:01:00 到 00:01:59.999 都属于 00:01 这一分钟
-    const minuteTimestamp = Math.floor(item.timestamp / 60000) * 60000
-    
-    if (minuteMap.has(minuteTimestamp)) {
-      minuteMap.set(minuteTimestamp, minuteMap.get(minuteTimestamp) + item.cnt)
+    const bucketStart = Math.floor(item.timestamp / intervalMs) * intervalMs
+
+    if (bucketMap.has(bucketStart)) {
+      bucketMap.set(bucketStart, bucketMap.get(bucketStart) + item.cnt)
     } else {
-      minuteMap.set(minuteTimestamp, item.cnt)
+      bucketMap.set(bucketStart, item.cnt)
     }
   }
-  
-  // 转换为数组并排序：[[timestamp, count], ...]
-  return Array.from(minuteMap.entries())
+
+  return Array.from(bucketMap.entries())
     .map(([timestamp, cnt]) => [timestamp, cnt])
     .sort((a, b) => a[0] - b[0])
 }
@@ -96,6 +94,7 @@ export default [
       const startTimeStr = query?.startTime
       const endTimeStr = query?.endTime
       const offsetStr = query?.offset || '0'
+      const granularityStr = query?.granularity || '1'
       
       // 验证必需参数
       if (!startTimeStr || !endTimeStr) {
@@ -154,6 +153,12 @@ export default [
           message: 'Invalid offset format'
         }
       }
+
+      // 解析聚合粒度（分钟）
+      let granularity = parseInt(granularityStr, 10)
+      if (!Number.isInteger(granularity) || granularity <= 0) {
+        granularity = 1
+      }
       
       // 计算偏移量（毫秒）
       const offsetMs = offsetDays * 24 * 60 * 60 * 1000
@@ -181,8 +186,8 @@ export default [
         return item.timestamp >= queryStartTime && item.timestamp <= queryEndTime
       })
       
-      // 按分钟聚合
-      const aggregatedData = aggregateByMinute(filteredData)
+      // 按指定粒度聚合
+      const aggregatedData = aggregateByInterval(filteredData, granularity)
       
       // 将返回的时间戳加上 offset，使得与 startTime 一致
       const resultData = aggregatedData.map(([timestamp, count]) => {
