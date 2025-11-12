@@ -50,6 +50,12 @@ const visibleStartTime = ref('') // 可视区域开始时间的格式化字符�
 const visibleEndTime = ref('') // 可视区域结束时间的格式化字符串，用于顶部信息显示
 const visibleDuration = ref('') // 可视区域时长，格式化后的字符串（如"3小时"、"2小时48分钟"），用于顶部信息显示
 const currentShowSymbol = ref(null) // 当前是否显示圆点
+// 右侧信息展示
+const currentSystemTime = ref('') // 1）当前系统时间（动态更新）
+const latestRequestTime = ref('') // 2）最新请求的时间
+const lastDataTime = ref('') // 3）返回数据最后一条的时间
+const lastDataCount = ref('-') // 4）返回数据最后一条的告警量
+let currentTimeTimer = null
 
 // 时间工具函数
 function getCurrentHourStart() {
@@ -85,6 +91,8 @@ function getCurrentTime() {
 // 从 API 获取告警数据
 async function fetchAlertData(startTime, endTime, offset) {
   try {
+    // 记录最新请求时间（发起时刻）
+    latestRequestTime.value = dayjs(getCurrentTime()).format('HH:mm:ss')
     const params = new URLSearchParams({
       startTime: startTime.toString(),
       endTime: endTime.toString(),
@@ -124,6 +132,7 @@ function mergeData(newDataPoints) {
   // 直接将新数据追加到数组后面（保持数组引用不变）
   allData.value.push(...newDataPoints)
   
+  updateLastDataInfo()
   updateChartData()
 }
 
@@ -132,6 +141,18 @@ async function fillMissingData() {
   if (!pauseTimestamp.value) return
   const missingData = await fetchAlertData(pauseTimestamp.value, getCurrentMinuteStart(), offsetDays.value)
   mergeData(missingData)
+}
+
+// 更新最后一条数据的时间与告警量
+function updateLastDataInfo() {
+  if (allData.value && allData.value.length > 0) {
+    const [ts, count] = allData.value[allData.value.length - 1]
+    lastDataTime.value = dayjs(ts).format('HH:mm:ss')
+    lastDataCount.value = String(count)
+  } else {
+    lastDataTime.value = ''
+    lastDataCount.value = '-'
+  }
 }
 
 // 计算并更新可视范围（完整的N小时，从整点开始到整点结束）
@@ -410,6 +431,7 @@ async function initData() {
       }
     }
     
+    updateLastDataInfo()
     updateChartData()
 
     await nextTick()
@@ -626,6 +648,14 @@ function handleRestore() {
 onMounted(async () => {
   await initData()
   
+  // 启动当前系统时间定时更新
+  currentSystemTime.value = dayjs(getCurrentTime()).format('HH:mm:ss')
+  if (!currentTimeTimer) {
+    currentTimeTimer = setInterval(() => {
+      currentSystemTime.value = dayjs(getCurrentTime()).format('HH:mm:ss')
+    }, 1000)
+  }
+  
   if (autoRefresh.value) {
     startPolling()
   }
@@ -633,6 +663,10 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   stopPolling()
+  if (currentTimeTimer) {
+    clearInterval(currentTimeTimer)
+    currentTimeTimer = null
+  }
 })
 </script>
 
@@ -689,20 +723,42 @@ onBeforeUnmount(() => {
       </template>
       <!-- 可视区域时间范围 -->
       <div class="visible-range-info">
-        <a-space size="large">
-          <div class="time-label">
-            <span class="label-title">可视区域开始时间：</span>
-            <a-tag color="blue" style="font-size: 14px;">{{ visibleStartTime }}</a-tag>
-          </div>
-          <div class="time-label">
-            <span class="label-title">可视区域结束时间：</span>
-            <a-tag color="green" style="font-size: 14px;">{{ visibleEndTime }}</a-tag>
-          </div>
-          <div class="time-label">
-            <span class="label-title">区间长度：</span>
-            <a-tag color="orange" style="font-size: 14px;">{{ visibleDuration }}</a-tag>
-          </div>
-        </a-space>
+        <div class="visible-left">
+          <a-space size="large">
+            <div class="time-label">
+              <span class="label-title">可视区域开始时间：</span>
+              <a-tag color="blue" style="font-size: 14px;">{{ visibleStartTime }}</a-tag>
+            </div>
+            <div class="time-label">
+              <span class="label-title">可视区域结束时间：</span>
+              <a-tag color="green" style="font-size: 14px;">{{ visibleEndTime }}</a-tag>
+            </div>
+            <div class="time-label">
+              <span class="label-title">区间长度：</span>
+              <a-tag color="orange" style="font-size: 14px;">{{ visibleDuration }}</a-tag>
+            </div>
+          </a-space>
+        </div>
+        <div class="visible-right">
+          <a-space size="large">
+            <div class="time-label">
+              <span class="label-title">当前时间：</span>
+              <a-tag color="default" style="font-size: 14px;">{{ currentSystemTime }}</a-tag>
+            </div>
+            <div class="time-label">
+              <span class="label-title">请求时间：</span>
+              <a-tag color="purple" style="font-size: 14px;">{{ latestRequestTime }}</a-tag>
+            </div>
+            <div class="time-label">
+              <span class="label-title">数据时间：</span>
+              <a-tag color="geekblue" style="font-size: 14px;">{{ lastDataTime }}</a-tag>
+            </div>
+            <div class="time-label">
+              <span class="label-title">告警量：</span>
+              <a-tag color="red" style="font-size: 14px;" class="number-width-6">{{ lastDataCount }}</a-tag>
+            </div>
+          </a-space>
+        </div>
       </div>
       
       <a-divider style="margin: 16px 0;" />
@@ -743,6 +799,9 @@ onBeforeUnmount(() => {
   background-color: #f5f5f5;
   border-radius: 4px;
   border: 1px solid #e8e8e8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .time-label {
@@ -754,6 +813,14 @@ onBeforeUnmount(() => {
 .label-title {
   font-weight: 500;
   color: #595959;
+}
+
+.number-width-6 {
+  display: inline-block;
+  width: 8ch; /* width to fit 8 digits */
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
 }
 
 /* 响应式设计 */
@@ -768,6 +835,8 @@ onBeforeUnmount(() => {
   
   .visible-range-info {
     padding: 8px 12px;
+    flex-direction: column;
+    align-items: flex-start;
   }
   
   .time-label {
