@@ -10,6 +10,7 @@ import {
   ToolboxComponent,
   LegendComponent,
   GraphicComponent,
+  MarkAreaComponent,
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { message } from 'ant-design-vue'
@@ -26,6 +27,7 @@ use([
   ToolboxComponent,
   LegendComponent,
   GraphicComponent,
+  MarkAreaComponent,
 ])
 
 const loading = ref(false)
@@ -52,7 +54,6 @@ const viewportEndTime = ref(null) // 可视区域的结束时间戳（毫秒）�
 const visibleStartTime = ref('') // 可视区域开始时间的格式化字符串，用于顶部信息显示
 const visibleEndTime = ref('') // 可视区域结束时间的格式化字符串，用于顶部信息显示
 const visibleDuration = ref('') // 可视区域时长，格式化后的字符串（如"3小时"、"2小时48分钟"），用于顶部信息显示
-const currentShowSymbol = ref(null) // 当前是否显示圆点
 // 右侧信息展示
 const currentSystemTime = ref('') // 1）当前系统时间（动态更新）
 const latestRequestTime = ref('') // 2）最新请求的时间
@@ -336,15 +337,92 @@ function triggerLatestFocusRing(latestPoint) {
   )
 }
 
+function clampArea(minTs, maxTs, startTs, endTs) {
+  const s = Math.max(startTs, minTs)
+  const e = Math.min(endTs, maxTs)
+  if (s >= e) return null
+  return [
+    { xAxis: s },
+    { xAxis: e },
+  ]
+}
+
+function getWeekendMarkAreas(minTs, maxTs) {
+  if (minTs == null || maxTs == null) return []
+
+  const areas = []
+
+  // 从 minTs 所在“周”的周一 00:00 开始往后遍历，避免漏掉跨边界周末
+  const start = dayjs(minTs).startOf('week').add(1, 'day').startOf('day') // Monday 00:00
+  const end = dayjs(maxTs)
+
+  for (let cursor = start; cursor.isBefore(end) || cursor.isSame(end); cursor = cursor.add(7, 'day')) {
+    const satStart = cursor.add(5, 'day') // Saturday 00:00
+    const monStart = cursor.add(7, 'day') // Next Monday 00:00
+
+    const area = clampArea(minTs, maxTs, satStart.valueOf(), monStart.valueOf())
+    if (area) areas.push(area)
+  }
+
+  return areas
+}
+
+function getTradingMarkAreas(minTs, maxTs) {
+  if (minTs == null || maxTs == null) return []
+
+  const areas = []
+  const startDay = dayjs(minTs).startOf('day')
+  const endDay = dayjs(maxTs).startOf('day')
+
+  for (let d = startDay; d.isBefore(endDay) || d.isSame(endDay); d = d.add(1, 'day')) {
+    const dow = d.day() // 0=Sun, 1=Mon, ..., 6=Sat
+    if (dow < 1 || dow > 5) continue
+
+    const tradingStart = d.hour(8).minute(30).second(0).millisecond(0).valueOf()
+    const tradingEnd = d.hour(17).minute(30).second(0).millisecond(0).valueOf()
+
+    const area = clampArea(minTs, maxTs, tradingStart, tradingEnd)
+    if (area) areas.push(area)
+  }
+
+  return areas
+}
+
 // 更新图表数据
 function updateChartData() {
   console.log(allData.value.length)
   console.log('isUserInteracted:',isUserInteracted.value)
+  const timeRange = getXAxisTimeRange()
 
   // 折线序列：展示全量历史数据
   const lineSeries = {
     ...chartOption.value.series[0],
     data: allData.value,
+    markArea: {
+      silent: true,
+      data: timeRange
+        ? [
+            ...getWeekendMarkAreas(timeRange.min, timeRange.max).map(pair => [
+              {
+                xAxis: pair[0].xAxis,
+                itemStyle: {
+                  color: 'rgba(0, 0, 0, 0.06)',
+                },
+              },
+              { xAxis: pair[1].xAxis },
+            ]),
+            ...getTradingMarkAreas(timeRange.min, timeRange.max).map(pair => [
+              {
+                xAxis: pair[0].xAxis,
+                itemStyle: {
+                  color: 'rgba(144, 238, 144, 0.22)',
+                },
+              },
+              { xAxis: pair[1].xAxis },
+            ]),
+          ]
+        : [],
+    },
   }
 
   // 高亮最新点（使用 effectScatter）
@@ -383,12 +461,6 @@ function updateChartData() {
   }
   
   //更新图表数据
-  const timeRange = getXAxisTimeRange()
-  console.log(timeRange.min, timeRange.max)
-  // console.log(dayjs(timeRange.min).format('YYYY-MM-DD HH:mm:ss'))
-  // console.log(dayjs(timeRange.max).format('YYYY-MM-DD HH:mm:ss'))
-  // console.log(dayjs(viewportStartTime.value).format('YYYY-MM-DD HH:mm:ss'))
-  // console.log(dayjs(viewportEndTime.value).format('YYYY-MM-DD HH:mm:ss'))
   
   const startPercent = ((viewportStartTime.value - timeRange.min) / (timeRange.max - timeRange.min)) * 100
   const endPercent = ((viewportEndTime.value - timeRange.min) / (timeRange.max - timeRange.min)) * 100
@@ -466,15 +538,9 @@ function resetToFullRange() {
   
   const startPercent = ((viewportStartTime.value - timeRange.min) / (timeRange.max - timeRange.min)) * 100
   const endPercent = ((viewportEndTime.value - timeRange.min) / (timeRange.max - timeRange.min)) * 100
-  const [dataZoomConfig] = createDataZoomConfig(startPercent, endPercent)
-  
   chartOption.value = {
     ...chartOption.value,
     xAxis: { ...chartOption.value.xAxis, min: timeRange.min, max: timeRange.max },
-  }
-  
-  chartOption.value = {
-    ...chartOption.value,
     dataZoom: createDataZoomConfig(startPercent, endPercent),
   }
   
@@ -490,7 +556,7 @@ function resetToFullRange() {
 }
 
 // 处理用户操作图表
-function handleDataZoom(params) {
+function handleDataZoom() {
   isUserInteracted.value = true
   showReset.value = true
   
