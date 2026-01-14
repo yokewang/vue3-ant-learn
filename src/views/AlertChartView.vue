@@ -2,13 +2,14 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { LineChart } from 'echarts/charts'
+import { LineChart, EffectScatterChart } from 'echarts/charts'
 import {
   GridComponent,
   TooltipComponent,
   DataZoomComponent,
   ToolboxComponent,
   LegendComponent,
+  GraphicComponent,
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { message } from 'ant-design-vue'
@@ -18,11 +19,13 @@ import dayjs from 'dayjs'
 use([
   CanvasRenderer,
   LineChart,
+  EffectScatterChart,
   GridComponent,
   TooltipComponent,
   DataZoomComponent,
   ToolboxComponent,
   LegendComponent,
+  GraphicComponent,
 ])
 
 const loading = ref(false)
@@ -56,6 +59,7 @@ const latestRequestTime = ref('') // 2）最新请求的时间
 const lastDataTime = ref('') // 3）返回数据最后一条的时间
 const lastDataCount = ref('-') // 4）返回数据最后一条的告警量
 let currentTimeTimer = null
+let lastLatestPointKey = null
 
 // 时间工具函数
 function getCurrentHourStart() {
@@ -253,13 +257,122 @@ function updateVisibleRangeAndInfo() {
   }
 }
 
+function getLatestPointKey(point) {
+  if (!point) return null
+  const [ts, count] = point
+  return `${ts}-${count}`
+}
+
+function triggerLatestFocusRing(latestPoint) {
+  if (!chartRef.value?.chart || !latestPoint) return
+
+  const chart = chartRef.value.chart
+  const pixel = chart.convertToPixel({ seriesIndex: 0 }, latestPoint)
+  if (!pixel || !Array.isArray(pixel)) return
+  const [x, y] = pixel
+
+  chart.setOption(
+    {
+      graphic: [
+        {
+          id: 'latest-focus-ring',
+          type: 'circle',
+          // 以 position 定位到最新点
+          position: [x, y],
+          shape: {
+            cx: 0,
+            cy: 0,
+            r: 60,
+          },
+          style: {
+            stroke: 'rgba(250, 173, 20, 0.9)',
+            lineWidth: 4,
+            fill: 'transparent',
+            opacity: 0,
+          },
+          z: 10,
+          keyframeAnimation: {
+            duration: 900,
+            loop: false,
+            keyframes: [
+              {
+                percent: 0,
+                style: {
+                  opacity: 0,
+                  lineWidth: 0,
+                },
+                shape: {
+                  r: 70,
+                },
+              },
+              {
+                percent: 0.25,
+                style: {
+                  opacity: 0.9,
+                  lineWidth: 6,
+                },
+                shape: {
+                  r: 60,
+                },
+              },
+              {
+                percent: 1,
+                style: {
+                  opacity: 0,
+                  lineWidth: 0,
+                },
+                shape: {
+                  r: 10,
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+    {
+      replaceMerge: ['graphic'],
+    },
+  )
+}
+
 // 更新图表数据
 function updateChartData() {
   console.log(allData.value.length)
   console.log('isUserInteracted:',isUserInteracted.value)
-  const seriesConfig = {
+
+  // 折线序列：展示全量历史数据
+  const lineSeries = {
     ...chartOption.value.series[0],
     data: allData.value,
+  }
+
+  // 高亮最新点（使用 effectScatter）
+  const lastPointRaw = allData.value.length
+    ? allData.value[allData.value.length - 1]
+    : null
+  const lastPoint = lastPointRaw ? [lastPointRaw] : []
+  const latestKey = getLatestPointKey(lastPointRaw)
+  const baseEffectSeries = chartOption.value.series[1] || {
+    name: '最新告警点',
+    type: 'effectScatter',
+    coordinateSystem: 'cartesian2d',
+    rippleEffect: {
+      brushType: 'stroke',
+      scale: 2.6,
+      period: 3,
+    },
+    symbolSize: 12,
+    zlevel: 2,
+    itemStyle: {
+      color: '#faad14',
+      shadowBlur: 12,
+      shadowColor: 'rgba(250, 173, 20, 0.45)',
+    },
+  }
+  const latestPointSeries = {
+    ...baseEffectSeries,
+    data: lastPoint,
   }
   
   if (!isUserInteracted.value && chartStartTime.value !== null) {
@@ -285,10 +398,21 @@ function updateChartData() {
     xAxis: { 
       ...chartOption.value.xAxis, 
       min: timeRange.min, 
-      max: timeRange.max 
+      max: timeRange.max,
     },
     dataZoom: createDataZoomConfig(startPercent, endPercent),
-    series: [seriesConfig],
+    // 第一条为原折线，第二条为始终跟随最新数据点的高亮点
+    series: [lineSeries, latestPointSeries],
+  }
+
+  // 最新点变更时，触发一次“大环收缩聚焦”效果
+  if (latestKey && latestKey !== lastLatestPointKey) {
+    lastLatestPointKey = latestKey
+    nextTick(() => {
+      setTimeout(() => {
+        triggerLatestFocusRing(lastPointRaw)
+      }, 50)
+    })
   }
   
   // 更新可视区域信息
@@ -635,6 +759,24 @@ const chartOption = ref({
         opacity: 0.3,
       },
       data: allData.value,
+    },
+    {
+      name: '最新告警点',
+      type: 'effectScatter',
+      coordinateSystem: 'cartesian2d',
+      rippleEffect: {
+        brushType: 'stroke',
+        scale: 2.6,
+        period: 3,
+      },
+      symbolSize: 12,
+      zlevel: 2,
+      itemStyle: {
+        color: '#faad14',
+        shadowBlur: 12,
+        shadowColor: 'rgba(250, 173, 20, 0.45)',
+      },
+      data: [],
     },
   ],
 })
