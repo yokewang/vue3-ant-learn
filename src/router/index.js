@@ -14,6 +14,7 @@ import DevTestView from '../views/DevTestView.vue'
 import AlertChartView from '../views/AlertChartView.vue'
 import TimeSeriesChartView from '../views/TimeSeriesChartView.vue'
 import AlertChartExView from '../views/AlertChartExView.vue'
+import LineSectionView from '../views/LineSectionView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -92,6 +93,11 @@ const router = createRouter({
       path: '/alert-chart-ex',
       name: 'alert-chart-ex',
       component: AlertChartExView,
+    },
+    {
+      path: '/line-sections',
+      name: 'line-sections',
+      component: LineSectionView,
     },
   ],
 })
