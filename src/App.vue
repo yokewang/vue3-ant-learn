@@ -1,6 +1,6 @@
 <script setup>
 import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -11,19 +11,26 @@ const links = computed(() =>
     .filter((r) => r.path && !r.path.includes(':'))
     .map((r) => ({ path: r.path, label: r.name || r.path })),
 )
+
+const collapsed = ref(false)
 </script>
 
 <template>
   <a-layout style="min-height: 100vh">
-    <a-layout-sider :width="180" theme="dark">
+    <a-layout-sider v-model:collapsed="collapsed" collapsible :width="200" theme="dark">
+      <div class="logo">
+        <span v-if="!collapsed">Hello Vue3</span>
+        <span v-else>V3</span>
+      </div>
       <nav class="sider-links">
         <RouterLink
           v-for="r in links"
           :key="r.path"
           :to="r.path"
-          :class="{ active: route.path === r.path }"
+          :class="{ active: route.path === r.path, 'collapsed-link': collapsed }"
         >
-          {{ r.label }}
+          <span v-if="!collapsed">{{ r.label }}</span>
+          <span v-else>{{ r.label.charAt(0).toUpperCase() }}</span>
         </RouterLink>
       </nav>
     </a-layout-sider>
@@ -57,6 +64,26 @@ const links = computed(() =>
 
 .sider-links a.active {
   background: rgba(255, 255, 255, 0.18);
+}
+
+.collapsed-link {
+  text-align: center;
+  padding: 6px 0 !important;
+}
+
+.logo {
+  height: 32px;
+  margin: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: bold;
+  font-size: 16px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .content {
