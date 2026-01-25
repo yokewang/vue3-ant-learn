@@ -120,13 +120,21 @@ const updateNode = (id, status, finalDuration = 0) => {
   node.data.status = status
 
   if (['success', 'error'].includes(status)) {
-      if (progressIntervals[id]) clearInterval(progressIntervals[id])
-      node.data.isActive = false
-      if (finalDuration > 0) node.data.duration = finalDuration
-      node.data.progress = 100
+    if (progressIntervals[id]) clearInterval(progressIntervals[id])
+    node.data.isActive = false
+    if (finalDuration > 0) node.data.duration = finalDuration
+    node.data.progress = 100
   }
-
   updateNodeStyle(node)
+}
+
+// Optimized helper for running a node task
+const runNodeTask = async (id, duration, status = 'processing') => {
+  updateNode(id, status)
+  setActive(id, true)
+  startProgress(id, duration)
+  await sleep(duration)
+  updateNode(id, 'success', duration)
 }
 
 const updateNodeStyle = (node) => {
@@ -201,16 +209,9 @@ const runSuccess = async () => {
 
       setActive('auth-service', false)
       updateNode('auth-service', 'waiting')
-      setEdgeActive('auth-service', 'auth-db', true) // Highlight Edge
-
-      // Auth DB
-      updateNode('auth-db', 'processing')
-      setActive('auth-db', true)
-      startProgress('auth-db', 100)
-      await sleep(100)
-      updateNode('auth-db', 'success', 100)
-
-      setEdgeActive('auth-service', 'auth-db', false) // Unhighlight
+      setEdgeActive('auth-service', 'auth-db', true)
+      await runNodeTask('auth-db', 100)
+      setEdgeActive('auth-service', 'auth-db', false)
       setActive('auth-service', true)
       updateNode('auth-service', 'processing')
 
@@ -242,16 +243,9 @@ const runSuccess = async () => {
 
       setActive('order-service', false)
       updateNode('order-service', 'waiting')
-      setEdgeActive('order-service', 'order-cache', true) // Highlight
-
-      // 1. Redis
-      updateNode('order-cache', 'processing')
-      setActive('order-cache', true)
-      startProgress('order-cache', 20)
-      await sleep(20)
-      updateNode('order-cache', 'success', 20)
-
-      setEdgeActive('order-service', 'order-cache', false) // Unhighlight
+      setEdgeActive('order-service', 'order-cache', true)
+      await runNodeTask('order-cache', 20)
+      setEdgeActive('order-service', 'order-cache', false)
       setActive('order-service', true)
       updateNode('order-service', 'processing')
 
@@ -259,16 +253,9 @@ const runSuccess = async () => {
 
       setActive('order-service', false)
       updateNode('order-service', 'waiting')
-      setEdgeActive('order-service', 'order-db', true) // Highlight
-
-      // 2. DB
-      updateNode('order-db', 'processing')
-      setActive('order-db', true)
-      startProgress('order-db', 150)
-      await sleep(150)
-      updateNode('order-db', 'success', 150)
-
-      setEdgeActive('order-service', 'order-db', false) // Unhighlight
+      setEdgeActive('order-service', 'order-db', true)
+      await runNodeTask('order-db', 150)
+      setEdgeActive('order-service', 'order-db', false)
       setActive('order-service', true)
       updateNode('order-service', 'processing')
 
@@ -315,17 +302,12 @@ const runFailEarly = async () => {
     try {
         updateNode('auth-service', 'processing')
         setActive('auth-service', true)
-
         startProgress('auth-service', 80)
-        await sleep(30)
-
-        await sleep(50)
+        await sleep(80)
         throw new Error('Auth Failed')
-    } catch (e) {
+    } catch {
         updateNode('auth-service', 'error', 80)
-        setEdgeActive('root', 'auth-service', false) // Usually edge stays active to show error path?
-                                                     // Or reset. Let's reset to show 'return'.
-
+        setEdgeActive('root', 'auth-service', false)
         setActive('root', true)
         updateNode('root', 'processing')
         await sleep(20)
@@ -403,14 +385,7 @@ const runRetry = async () => {
       setActive('order-service', false)
       updateNode('order-service', 'waiting')
       setEdgeActive('order-service', 'order-cache', true)
-
-      // Redis
-      updateNode('order-cache', 'processing')
-      setActive('order-cache', true)
-      startProgress('order-cache', 20)
-      await sleep(20)
-      updateNode('order-cache', 'success', 20)
-
+      await runNodeTask('order-cache', 20)
       setEdgeActive('order-service', 'order-cache', false)
       setActive('order-service', true)
       updateNode('order-service', 'processing')
@@ -457,7 +432,7 @@ const runRetry = async () => {
       return total
     }
 
-    const orderTime = await runOrderServiceRetry()
+    await runOrderServiceRetry()
     setEdgeActive('root', 'order-service', false)
 
     setActive('root', true)
@@ -488,7 +463,7 @@ const runRetry = async () => {
           step="5"
           :disabled="isRunning"
         />
-        <div class="slider-help">Faster (Left) <-> Slower (Right)</div>
+        <div class="slider-help">Faster (Left) &lt;---&gt; Slower (Right)</div>
       </div>
 
       <div class="controls">
