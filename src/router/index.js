@@ -15,6 +15,7 @@ import AlertChartView from '../views/AlertChartView.vue'
 import TimeSeriesChartView from '../views/TimeSeriesChartView.vue'
 import AlertChartExView from '../views/AlertChartExView.vue'
 import LineSectionView from '../views/LineSectionView.vue'
+import SyncCallFlowView from '../views/SyncCallFlowView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -98,6 +99,11 @@ const router = createRouter({
       path: '/line-sections',
       name: 'line-sections',
       component: LineSectionView,
+    },
+    {
+      path: '/sync-call-flow',
+      name: 'sync-call-flow',
+      component: SyncCallFlowView,
     },
   ],
 })
