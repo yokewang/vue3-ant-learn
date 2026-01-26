@@ -10,7 +10,7 @@ import '@vue-flow/controls/dist/style.css'
 const initialNodes = [
   { id: 'root', type: 'default', label: 'User Order Request', position: { x: 300, y: 0 }, data: { status: 'idle', duration: 0, progress: 0, isActive: false } },
   { id: 'auth-service', type: 'default', label: 'Auth Service', position: { x: 150, y: 150 }, data: { status: 'idle', duration: 0, progress: 0, isActive: false } },
-  { id: 'order-service', type: 'default', label: 'Order Service', position: { x: 450, y: 150 }, data: { status: 'idle', duration: 0, progress: 0, isActive: false } },
+  { id: 'order-service', type: 'default', label: 'Order Service', position: { x: 450, y: 150 }, data: { status: 'idle', duration: 0, progress: 0, isActive: false, isCloud: true } },
   { id: 'auth-db', type: 'default', label: 'Auth DB', position: { x: 150, y: 300 }, data: { status: 'idle', duration: 0, progress: 0, isActive: false } },
   { id: 'order-cache', type: 'default', label: 'Order Redis', position: { x: 350, y: 300 }, data: { status: 'idle', duration: 0, progress: 0, isActive: false } },
   { id: 'order-db', type: 'default', label: 'Order DB', position: { x: 550, y: 300 }, data: { status: 'idle', duration: 0, progress: 0, isActive: false } },
@@ -483,6 +483,11 @@ const runRetry = async () => {
         <Controls />
         <template #node-default="{ data, label }">
           <div class="custom-node" :class="{ 'is-active': data.isActive }">
+            <div class="cloud-badge" v-if="data.isCloud" title="Cloud Service">
+               <svg viewBox="0 0 24 24" width="16" height="16" fill="white">
+                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/>
+              </svg>
+            </div>
             <div class="node-label">{{ label }}</div>
             <div class="node-duration" v-if="data.duration > 0 || ['processing', 'waiting', 'retrying'].includes(data.status)">{{ data.duration }}ms</div>
             <div class="progress-bar-container">
@@ -608,6 +613,22 @@ const runRetry = async () => {
   text-transform: uppercase;
   margin-top: 2px;
   opacity: 0.8;
+}
+
+.cloud-badge {
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    background: #1890ff;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 5;
 }
 
 .active-badge {
