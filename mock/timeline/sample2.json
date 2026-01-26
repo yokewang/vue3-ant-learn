@@ -1,0 +1,146 @@
+[
+  {
+    "servicename": "Gateway Request",
+    "span_id": "1",
+    "start_ms": 0,
+    "latency_ms": 10000,
+    "end_ms": 10000,
+    "parent_span_id": "",
+    "level": 0
+  },
+  {
+    "servicename": "Payment",
+    "span_id": "1.1",
+    "start_ms": 500,
+    "latency_ms": 6772,
+    "end_ms": 7272,
+    "parent_span_id": "1",
+    "level": 1
+  },
+  {
+    "servicename": "Inventory",
+    "span_id": "1.1.1",
+    "start_ms": 838,
+    "latency_ms": 3296,
+    "end_ms": 4134,
+    "parent_span_id": "1.1",
+    "level": 2
+  },
+  {
+    "servicename": "Inventory (Cloud)",
+    "span_id": "1.1.1.1",
+    "start_ms": 1002,
+    "latency_ms": 1816,
+    "end_ms": 2818,
+    "parent_span_id": "1.1.1",
+    "level": 3
+  },
+  {
+    "servicename": "Risk (Cloud)",
+    "span_id": "1.1.1.1.1",
+    "start_ms": 1092,
+    "latency_ms": 1206,
+    "end_ms": 2298,
+    "parent_span_id": "1.1.1.1",
+    "level": 4
+  },
+  {
+    "servicename": "Auth (Cloud)",
+    "span_id": "1.1.1.1.1.1",
+    "start_ms": 1152,
+    "latency_ms": 645,
+    "end_ms": 1797,
+    "parent_span_id": "1.1.1.1.1",
+    "level": 5
+  },
+  {
+    "servicename": "Inventory",
+    "span_id": "1.1.1.1.1.1.1",
+    "start_ms": 1184,
+    "latency_ms": 383,
+    "end_ms": 1567,
+    "parent_span_id": "1.1.1.1.1.1",
+    "level": 6
+  },
+  {
+    "servicename": "DB Query (Cloud)",
+    "span_id": "1.1.1.1.1.1.1.1",
+    "start_ms": 1203,
+    "latency_ms": 294,
+    "end_ms": 1497,
+    "parent_span_id": "1.1.1.1.1.1.1",
+    "level": 7
+  },
+  {
+    "servicename": "Internal Process (Cloud)",
+    "span_id": "1.1.1.1.1.1.1.1.1",
+    "start_ms": 1217,
+    "latency_ms": 223,
+    "end_ms": 1440,
+    "parent_span_id": "1.1.1.1.1.1.1.1",
+    "level": 8
+  },
+  {
+    "servicename": "Internal Process",
+    "span_id": "1.1.1.1.1.1.1.1.1.1",
+    "start_ms": 1228,
+    "latency_ms": 160,
+    "end_ms": 1388,
+    "parent_span_id": "1.1.1.1.1.1.1.1.1",
+    "level": 9
+  },
+  {
+    "servicename": "Calc (Cloud)",
+    "span_id": "1.1.1.1.1.1.1.1.1.1.1",
+    "start_ms": 1236,
+    "latency_ms": 128,
+    "end_ms": 1364,
+    "parent_span_id": "1.1.1.1.1.1.1.1.1.1",
+    "level": 10
+  },
+  {
+    "servicename": "Internal Process (Cloud)",
+    "span_id": "1.1.1.1.1.1.1.1.1.1.1.1",
+    "start_ms": 1242,
+    "latency_ms": 57,
+    "end_ms": 1299,
+    "parent_span_id": "1.1.1.1.1.1.1.1.1.1.1",
+    "level": 11
+  },
+  {
+    "servicename": "DB Query",
+    "span_id": "1.1.1.1.1.1.1.1.1.1.1.1.1",
+    "start_ms": 1244,
+    "latency_ms": 28,
+    "end_ms": 1272,
+    "parent_span_id": "1.1.1.1.1.1.1.1.1.1.1.1",
+    "level": 12
+  },
+  {
+    "servicename": "DB Query",
+    "span_id": "1.1.1.1.1.1.1.1.1.1.1.1.1.1",
+    "start_ms": 1245,
+    "latency_ms": 19,
+    "end_ms": 1264,
+    "parent_span_id": "1.1.1.1.1.1.1.1.1.1.1.1.1",
+    "level": 13
+  },
+  {
+    "servicename": "DB Query",
+    "span_id": "1.1.1.1.1.1.1.1.1.1.1.1.1.1.1",
+    "start_ms": 1245,
+    "latency_ms": 13,
+    "end_ms": 1258,
+    "parent_span_id": "1.1.1.1.1.1.1.1.1.1.1.1.1.1",
+    "level": 14
+  },
+  {
+    "servicename": "DB Query",
+    "span_id": "1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1",
+    "start_ms": 1245,
+    "latency_ms": 10,
+    "end_ms": 1255,
+    "parent_span_id": "1.1.1.1.1.1.1.1.1.1.1.1.1.1.1",
+    "level": 15
+  }
+]

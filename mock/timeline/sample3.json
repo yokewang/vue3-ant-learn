@@ -1,0 +1,191 @@
+[
+  {
+    "servicename": "Gateway Request",
+    "span_id": "1",
+    "start_ms": 1769911200000,
+    "latency_ms": 10000,
+    "end_ms": 1769911210000,
+    "parent_span_id": "",
+    "level": 0
+  },
+  {
+    "servicename": "Inventory (Cloud)",
+    "span_id": "1.1",
+    "start_ms": 1769911200010,
+    "latency_ms": 6602,
+    "end_ms": 1769911206612,
+    "parent_span_id": "1",
+    "level": 1
+  },
+  {
+    "servicename": "Log",
+    "span_id": "1.1.1",
+    "start_ms": 1769911200020,
+    "latency_ms": 2160,
+    "end_ms": 1769911202180,
+    "parent_span_id": "1.1",
+    "level": 2
+  },
+  {
+    "servicename": "Order (Cloud)",
+    "span_id": "1.1.1.1",
+    "start_ms": 1769911200030,
+    "latency_ms": 586,
+    "end_ms": 1769911200616,
+    "parent_span_id": "1.1.1",
+    "level": 3
+  },
+  {
+    "servicename": "Auth",
+    "span_id": "1.1.1.1.1",
+    "start_ms": 1769911200040,
+    "latency_ms": 299,
+    "end_ms": 1769911200339,
+    "parent_span_id": "1.1.1.1",
+    "level": 4
+  },
+  {
+    "servicename": "Risk",
+    "span_id": "1.1.1.1.1.1",
+    "start_ms": 1769911200050,
+    "latency_ms": 230,
+    "end_ms": 1769911200280,
+    "parent_span_id": "1.1.1.1.1",
+    "level": 5
+  },
+  {
+    "servicename": "Calc",
+    "span_id": "1.1.1.1.1.1.1",
+    "start_ms": 1769911200060,
+    "latency_ms": 139,
+    "end_ms": 1769911200199,
+    "parent_span_id": "1.1.1.1.1.1",
+    "level": 6
+  },
+  {
+    "servicename": "DB Query",
+    "span_id": "1.1.1.1.1.1.1.1",
+    "start_ms": 1769911200070,
+    "latency_ms": 39,
+    "end_ms": 1769911200109,
+    "parent_span_id": "1.1.1.1.1.1.1",
+    "level": 7
+  },
+  {
+    "servicename": "DB Query",
+    "span_id": "1.1.1.1.1.1.1.2",
+    "start_ms": 1769911200140,
+    "latency_ms": 40,
+    "end_ms": 1769911200180,
+    "parent_span_id": "1.1.1.1.1.1.1",
+    "level": 7
+  },
+  {
+    "servicename": "Calc (Cloud)",
+    "span_id": "1.1.1.1.1.1.2",
+    "start_ms": 1769911200212,
+    "latency_ms": 43,
+    "end_ms": 1769911200255,
+    "parent_span_id": "1.1.1.1.1.1",
+    "level": 6
+  },
+  {
+    "servicename": "Risk",
+    "span_id": "1.1.1.1.2",
+    "start_ms": 1769911200389,
+    "latency_ms": 30,
+    "end_ms": 1769911200419,
+    "parent_span_id": "1.1.1.1",
+    "level": 4
+  },
+  {
+    "servicename": "Inventory",
+    "span_id": "1.1.1.2",
+    "start_ms": 1769911200641,
+    "latency_ms": 956,
+    "end_ms": 1769911201597,
+    "parent_span_id": "1.1.1",
+    "level": 3
+  },
+  {
+    "servicename": "Risk (Cloud)",
+    "span_id": "1.1.1.2.1",
+    "start_ms": 1769911200651,
+    "latency_ms": 427,
+    "end_ms": 1769911201078,
+    "parent_span_id": "1.1.1.2",
+    "level": 4
+  },
+  {
+    "servicename": "Risk",
+    "span_id": "1.1.1.2.1.1",
+    "start_ms": 1769911200661,
+    "latency_ms": 110,
+    "end_ms": 1769911200771,
+    "parent_span_id": "1.1.1.2.1",
+    "level": 5
+  },
+  {
+    "servicename": "Redis Get (Cloud)",
+    "span_id": "1.1.1.2.1.1.1",
+    "start_ms": 1769911200671,
+    "latency_ms": 65,
+    "end_ms": 1769911200736,
+    "parent_span_id": "1.1.1.2.1.1",
+    "level": 6
+  },
+  {
+    "servicename": "Risk",
+    "span_id": "1.1.2",
+    "start_ms": 1769911202224,
+    "latency_ms": 1303,
+    "end_ms": 1769911203527,
+    "parent_span_id": "1.1",
+    "level": 2
+  },
+  {
+    "servicename": "Risk",
+    "span_id": "1.1.2.1",
+    "start_ms": 1769911202234,
+    "latency_ms": 555,
+    "end_ms": 1769911202789,
+    "parent_span_id": "1.1.2",
+    "level": 3
+  },
+  {
+    "servicename": "Auth",
+    "span_id": "1.1.2.1.1",
+    "start_ms": 1769911202244,
+    "latency_ms": 48,
+    "end_ms": 1769911202292,
+    "parent_span_id": "1.1.2.1",
+    "level": 4
+  },
+  {
+    "servicename": "Log (Cloud)",
+    "span_id": "1.1.2.2",
+    "start_ms": 1769911202804,
+    "latency_ms": 343,
+    "end_ms": 1769911203147,
+    "parent_span_id": "1.1.2",
+    "level": 3
+  },
+  {
+    "servicename": "Order (Cloud)",
+    "span_id": "1.1.2.2.1",
+    "start_ms": 1769911202814,
+    "latency_ms": 45,
+    "end_ms": 1769911202859,
+    "parent_span_id": "1.1.2.2",
+    "level": 4
+  },
+  {
+    "servicename": "Order",
+    "span_id": "1.1.2.3",
+    "start_ms": 1769911203154,
+    "latency_ms": 31,
+    "end_ms": 1769911203185,
+    "parent_span_id": "1.1.2",
+    "level": 3
+  }
+]
