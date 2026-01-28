@@ -145,7 +145,7 @@ const updateNodeStyle = (node) => {
       style = { background: '#e6f7ff', color: '#096dd9', borderColor: '#1890ff', borderWidth: '1px', boxShadow: '0 0 10px #1890ff' }
       break
     case 'waiting':
-      style = { background: '#fafafa', color: '#595959', borderColor: '#d9d9d9', borderWidth: '1px',  borderStyle: 'dashed' }
+      style = { background: '#fff7e6', color: '#d46b08', borderColor: '#ffa940', borderWidth: '2px', borderStyle: 'dashed' }
       break
     case 'success':
       style = { background: '#f6ffed', color: '#389e0d', borderColor: '#52c41a', borderWidth: '1px' }
