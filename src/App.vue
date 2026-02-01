@@ -46,15 +46,15 @@ const collapsed = ref(false)
 .sider-links {
   display: flex;
   flex-direction: column;
-  padding: 12px 8px;
-  gap: 8px;
+  padding: 6px 8px;
+  gap: 2px;
 }
 
 .sider-links a {
   color: rgba(255, 255, 255, 0.95);
   text-decoration: none;
   display: block;
-  padding: 6px 8px;
+  padding: 3px 8px;
   border-radius: 6px;
 }
 
@@ -68,7 +68,7 @@ const collapsed = ref(false)
 
 .collapsed-link {
   text-align: center;
-  padding: 6px 0 !important;
+  padding: 3px 0 !important;
 }
 
 .logo {

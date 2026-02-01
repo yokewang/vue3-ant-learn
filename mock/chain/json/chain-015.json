@@ -1,0 +1,312 @@
+{
+  "meta": {
+    "bizType": "015",
+    "title": "央行质押式回购组件拓扑（BIZ_TYPE=015）",
+    "source": "mock/chain/chain-15.md"
+  },
+  "nodes": [
+    {
+      "id": "SCS",
+      "type": "default",
+      "data": { "label": "SCS" }
+    },
+    {
+      "id": "ESBF5",
+      "type": "default",
+      "data": { "label": "ESB-F5" }
+    },
+    {
+      "id": "ESB",
+      "type": "default",
+      "data": { "label": "ESB" }
+    },
+
+    {
+      "id": "SRSF5",
+      "type": "default",
+      "data": { "label": "SRS-F5" }
+    },
+    {
+      "id": "BCAMSF5",
+      "type": "default",
+      "data": { "label": "BCAMS-F5" }
+    },
+    {
+      "id": "GUAMSF5",
+      "type": "default",
+      "data": { "label": "GUAMS-F5" }
+    },
+    {
+      "id": "CMSF5",
+      "type": "default",
+      "data": { "label": "CMS-F5" }
+    },
+    {
+      "id": "SDSF5",
+      "type": "default",
+      "data": { "label": "SDS-F5" }
+    },
+    {
+      "id": "SSSF5",
+      "type": "default",
+      "data": { "label": "SSS-F5" }
+    },
+    {
+      "id": "GCSF5",
+      "type": "default",
+      "data": { "label": "GCS-F5" }
+    },
+
+    {
+      "id": "SRS",
+      "type": "default",
+      "data": { "label": "SRS" }
+    },
+    {
+      "id": "BCAMS",
+      "type": "default",
+      "data": { "label": "BCAMS" }
+    },
+    {
+      "id": "GUAMS",
+      "type": "default",
+      "data": { "label": "GUAMS" }
+    },
+    {
+      "id": "CMS",
+      "type": "default",
+      "data": { "label": "CMS" }
+    },
+    {
+      "id": "SDS",
+      "type": "default",
+      "data": { "label": "SDS" }
+    },
+    {
+      "id": "SSS",
+      "type": "default",
+      "data": { "label": "SSS" }
+    },
+    {
+      "id": "GCS",
+      "type": "default",
+      "data": { "label": "GCS" }
+    },
+
+    {
+      "id": "MQCP",
+      "type": "default",
+      "data": { "label": "MQCP" }
+    },
+    {
+      "id": "MPSS",
+      "type": "default",
+      "data": { "label": "MPSS" }
+    },
+    {
+      "id": "AMEPA",
+      "type": "default",
+      "data": { "label": "AMEPA" }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-SCS-ESBF5-1",
+      "source": "SCS",
+      "target": "ESBF5",
+      "label": "srs.905.001\nbcams.009.004\nguams.032.001\nbcams.009.056\nsss.002.001",
+      "data": {
+        "codes": [
+          "srs.905.001",
+          "bcams.009.004",
+          "guams.032.001",
+          "bcams.009.056",
+          "sss.002.001"
+        ]
+      }
+    },
+    {
+      "id": "e-ESBF5-ESB-1",
+      "source": "ESBF5",
+      "target": "ESB",
+      "label": "srs.905.001\nbcams.009.004\nguams.032.001\nbcams.009.056\nsss.002.001\nsds.902.005\nsss.007.003\nbcams.009.013\ngcs.201.001\nsss.007.001\nsds.902.002\nsss.007.002\ncms.005.006",
+      "data": {
+        "codes": [
+          "srs.905.001",
+          "bcams.009.004",
+          "guams.032.001",
+          "bcams.009.056",
+          "sss.002.001",
+          "sds.902.005",
+          "sss.007.003",
+          "bcams.009.013",
+          "gcs.201.001",
+          "sss.007.001",
+          "sds.902.002",
+          "sss.007.002",
+          "cms.005.006"
+        ]
+      }
+    },
+
+    {
+      "id": "e-ESB-SRSF5-1",
+      "source": "ESB",
+      "target": "SRSF5",
+      "label": "srs.905.001",
+      "data": { "codes": ["srs.905.001"] }
+    },
+    {
+      "id": "e-ESB-BCAMSF5-1",
+      "source": "ESB",
+      "target": "BCAMSF5",
+      "label": "bcams.009.004\nbcams.009.056\nbcams.009.013",
+      "data": { "codes": ["bcams.009.004", "bcams.009.056", "bcams.009.013"] }
+    },
+    {
+      "id": "e-ESB-GUAMSF5-1",
+      "source": "ESB",
+      "target": "GUAMSF5",
+      "label": "guams.032.001",
+      "data": { "codes": ["guams.032.001"] }
+    },
+    {
+      "id": "e-ESB-CMSF5-1",
+      "source": "ESB",
+      "target": "CMSF5",
+      "label": "cms.005.006",
+      "data": { "codes": ["cms.005.006"] }
+    },
+    {
+      "id": "e-ESB-SDSF5-1",
+      "source": "ESB",
+      "target": "SDSF5",
+      "label": "sds.902.005\nsds.902.002",
+      "data": { "codes": ["sds.902.005", "sds.902.002"] }
+    },
+    {
+      "id": "e-ESB-SSSF5-1",
+      "source": "ESB",
+      "target": "SSSF5",
+      "label": "sss.002.001\nsss.007.003\nsss.007.001\nsss.007.002",
+      "data": { "codes": ["sss.002.001", "sss.007.003", "sss.007.001", "sss.007.002"] }
+    },
+    {
+      "id": "e-ESB-GCSF5-1",
+      "source": "ESB",
+      "target": "GCSF5",
+      "label": "gcs.201.001",
+      "data": { "codes": ["gcs.201.001"] }
+    },
+
+    {
+      "id": "e-SRSF5-SRS-1",
+      "source": "SRSF5",
+      "target": "SRS",
+      "label": "srs.905.001",
+      "data": { "codes": ["srs.905.001"] }
+    },
+    {
+      "id": "e-BCAMSF5-BCAMS-1",
+      "source": "BCAMSF5",
+      "target": "BCAMS",
+      "label": "bcams.009.004\nbcams.009.056\nbcams.009.013",
+      "data": { "codes": ["bcams.009.004", "bcams.009.056", "bcams.009.013"] }
+    },
+    {
+      "id": "e-GUAMSF5-GUAMS-1",
+      "source": "GUAMSF5",
+      "target": "GUAMS",
+      "label": "guams.032.001",
+      "data": { "codes": ["guams.032.001"] }
+    },
+    {
+      "id": "e-SDSF5-SDS-1",
+      "source": "SDSF5",
+      "target": "SDS",
+      "label": "sds.902.005\nsds.902.002",
+      "data": { "codes": ["sds.902.005", "sds.902.002"] }
+    },
+    {
+      "id": "e-SSSF5-SSS-1",
+      "source": "SSSF5",
+      "target": "SSS",
+      "label": "sss.002.001\nsss.007.003\nsss.007.001\nsss.007.002",
+      "data": { "codes": ["sss.002.001", "sss.007.003", "sss.007.001", "sss.007.002"] }
+    },
+    {
+      "id": "e-GCSF5-GCS-1",
+      "source": "GCSF5",
+      "target": "GCS",
+      "label": "gcs.201.001",
+      "data": { "codes": ["gcs.201.001"] }
+    },
+    {
+      "id": "e-CMSF5-CMS-1",
+      "source": "CMSF5",
+      "target": "CMS",
+      "label": "cms.005.006",
+      "data": { "codes": ["cms.005.006"] }
+    },
+
+    {
+      "id": "e-SSS-MQCP-1",
+      "source": "SSS",
+      "target": "MQCP",
+      "label": "sss.901.003",
+      "data": { "codes": ["sss.901.003"] }
+    },
+    {
+      "id": "e-SSS-ESBF5-1",
+      "source": "SSS",
+      "target": "ESBF5",
+      "label": "sds.902.005\nbcams.009.013\ngcs.201.001\nsds.902.002\ncms.005.006",
+      "data": {
+        "codes": ["sds.902.005", "bcams.009.013", "gcs.201.001", "sds.902.002", "cms.005.006"]
+      }
+    },
+    {
+      "id": "e-SDS-ESBF5-1",
+      "source": "SDS",
+      "target": "ESBF5",
+      "label": "sss.007.003\nsss.007.002",
+      "data": { "codes": ["sss.007.003", "sss.007.002"] }
+    },
+    {
+      "id": "e-GCS-ESBF5-1",
+      "source": "GCS",
+      "target": "ESBF5",
+      "label": "sss.007.001",
+      "data": { "codes": ["sss.007.001"] }
+    },
+    {
+      "id": "e-GCS-MQCP-1",
+      "source": "GCS",
+      "target": "MQCP",
+      "label": "gcs.305.001",
+      "data": { "codes": ["gcs.305.001"] }
+    },
+    {
+      "id": "e-SCS-MQCP-1",
+      "source": "SCS",
+      "target": "MQCP",
+      "label": "scs.003.010",
+      "data": { "codes": ["scs.003.010"] }
+    },
+
+    {
+      "id": "e-MQCP-MPSS-1",
+      "source": "MQCP",
+      "target": "MPSS",
+      "label": "scs.003.010\nsss.901.003",
+      "data": { "codes": ["scs.003.010", "sss.901.003"] }
+    },
+    {
+      "id": "e-MQCP-AMEPA-1",
+      "source": "MQCP",
+      "target": "AMEPA",
+      "label": "gcs.305.001",
+      "data": { "codes": ["gcs.305.001"] }
+    }
+  ]
+}

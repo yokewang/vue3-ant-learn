@@ -17,6 +17,8 @@ import AlertChartExView from '../views/AlertChartExView.vue'
 import LineSectionView from '../views/LineSectionView.vue'
 import SyncCallFlowView from '../views/SyncCallFlowView.vue'
 import TimelineView from '../views/TimelineView.vue'
+import ChainFlowView from '../views/ChainFlowView.vue'
+import ChainMermaidView from '../views/ChainMermaidView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -110,6 +112,16 @@ const router = createRouter({
       path: '/timeline',
       name: 'timeline',
       component: TimelineView,
+    },
+    {
+      path: '/chain-flow',
+      name: 'chain-flow',
+      component: ChainFlowView,
+    },
+    {
+      path: '/chain-mermaid',
+      name: 'chain-mermaid',
+      component: ChainMermaidView,
     },
   ],
 })

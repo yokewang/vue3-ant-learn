@@ -1,0 +1,59 @@
+## 央行质押式回购组件拓扑（BIZ_TYPE=015）
+
+```mermaid
+graph LR
+  SCS[SCS]
+  ESBF5[ESB-F5]
+  ESB[ESB]
+
+  SRSF5[SRS-F5]
+  BCAMSF5[BCAMS-F5]
+  GUAMSF5[GUAMS-F5]
+  SSSF5[SSS-F5]
+  SDSF5[SDS-F5]
+  GCSF5[GCS-F5]
+  CMSF5[CMS-F5]
+
+  SRS[SRS]
+  BCAMS[BCAMS]
+  GUAMS[GUAMS]
+  SSS[SSS]
+  SDS[SDS]
+  GCS[GCS]
+  CMS[CMS]
+
+  MQCP[MQCP]
+  MPSS[MPSS]
+  AMEPA[AMEPA]
+
+
+  SCS -- "srs.905.001<br/>bcams.009.004<br/>guams.032.001<br/>bcams.009.056<br/>sss.002.001" --> ESBF5
+
+  ESBF5 -- "srs.905.001<br/>bcams.009.004<br/>guams.032.001<br/>bcams.009.056<br/>sss.002.001<br/>sds.902.005<br/>sss.007.003<br/>bcams.009.013<br/>gcs.201.001<br/>sss.007.001<br/>sds.902.002<br/>sss.007.002<br/>cms.005.006" --> ESB
+
+  ESB -- "srs.905.001" --> SRSF5
+  ESB -- "bcams.009.004<br/>bcams.009.056<br/>bcams.009.013" --> BCAMSF5
+  ESB -- "guams.032.001" --> GUAMSF5
+  ESB -- "cms.005.006" --> CMSF5
+  ESB -- "sds.902.005<br/>sds.902.002" --> SDSF5
+  ESB -- "sss.002.001<br/>sss.007.003<br/>sss.007.001<br/>sss.007.002" --> SSSF5
+  ESB -- "gcs.201.001" --> GCSF5
+  
+  SRSF5 -- "srs.905.001" --> SRS
+  BCAMSF5 -- "bcams.009.004<br/>bcams.009.056<br/>bcams.009.013" --> BCAMS
+  GUAMSF5 -- "guams.032.001" --> GUAMS
+  SDSF5 -- "sds.902.005<br/>sds.902.002" --> SDS
+  SSSF5 -- "sss.002.001<br/>sss.007.003<br/>sss.007.001<br/>sss.007.002" --> SSS
+  GCSF5 -- "gcs.201.001" --> GCS
+  CMSF5 -- "cms.005.006" --> CMS
+
+  SSS -- "sss.901.003" --> MQCP
+  SSS -- "sds.902.005<br/>bcams.009.013<br/>gcs.201.001<br/>sds.902.002<br/>cms.005.006" --> ESBF5
+  SDS -- "sss.007.003<br/>sss.007.002" --> ESBF5
+  GCS -- "sss.007.001" --> ESBF5
+  GCS -- "gcs.305.001" --> MQCP
+  SCS -- "scs.003.010" --> MQCP
+
+  MQCP -- "scs.003.010<br/>sss.901.003" --> MPSS
+  MQCP -- "gcs.305.001" --> AMEPA
+```
