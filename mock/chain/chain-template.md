@@ -1,6 +1,6 @@
+## 央行质押式回购组件拓扑（BIZ_TYPE=015）
 
-%%{init: {"themeCSS": "@keyframes flowEdge{to{stroke-dashoffset:-24;}} .edgePath path{stroke-dasharray:6 6;animation:flowEdge 2.2s linear infinite;}"}}%%
-
+```mermaid
 graph LR
   SCS[SCS]
   ESBF5[ESB-F5]
@@ -8,7 +8,7 @@ graph LR
 
   SRSF5[SRS-F5]
   BCAMSF5[BCAMS-F5]
-  %%GUAMSF5[GUAMS-F5]
+  GUAMSF5[GUAMS-F5]
   SSSF5[SSS-F5]
   SDSF5[SDS-F5]
   GCSF5[GCS-F5]
@@ -16,7 +16,7 @@ graph LR
 
   SRS[SRS]
   BCAMS[BCAMS]
-  GUAMS["GUAMS (Cloud)"]
+  GUAMS[GUAMS]
   SSS[SSS]
   SDS[SDS]
   GCS[GCS]
@@ -33,8 +33,7 @@ graph LR
 
   ESB -- "srs.905.001" --> SRSF5
   ESB -- "bcams.009.004<br/>bcams.009.056<br/>bcams.009.013" --> BCAMSF5
-  %%ESB -- "guams.032.001" --> GUAMSF5
-  ESB -- "guams.032.001" --> GUAMS
+  ESB -- "guams.032.001" --> GUAMSF5
   ESB -- "cms.005.006" --> CMSF5
   ESB -- "sds.902.005<br/>sds.902.002" --> SDSF5
   ESB -- "sss.002.001<br/>sss.007.003<br/>sss.007.001<br/>sss.007.002" --> SSSF5
@@ -42,7 +41,7 @@ graph LR
   
   SRSF5 -- "srs.905.001" --> SRS
   BCAMSF5 -- "bcams.009.004<br/>bcams.009.056<br/>bcams.009.013" --> BCAMS
-  %%GUAMSF5 -- "guams.032.001" --> GUAMS
+  GUAMSF5 -- "guams.032.001" --> GUAMS
   SDSF5 -- "sds.902.005<br/>sds.902.002" --> SDS
   SSSF5 -- "sss.002.001<br/>sss.007.003<br/>sss.007.001<br/>sss.007.002" --> SSS
   GCSF5 -- "gcs.201.001" --> GCS
@@ -57,11 +56,4 @@ graph LR
 
   MQCP -- "scs.003.010<br/>sss.901.003" --> MPSS
   MQCP -- "gcs.305.001" --> AMEPA
-
-  %% Highlight cloud component
-  classDef cloud fill:#fff7e6,stroke:#fa8c16,stroke-width:2px,color:#ad4e00;
-  class GUAMS cloud;
-
-  %% Animate all edges
-  %% NOTE: Mermaid flowchart linkStyle does not support setting a CSS class
-  %% Instead we use themeCSS to target all edges and animate them
+```

@@ -1,0 +1,65 @@
+
+%%{init: {"themeCSS": "@keyframes flowEdge{to{stroke-dashoffset:-24;}} .edgePath path{stroke-dasharray:6 6;animation:flowEdge 2.2s linear infinite;}"}}%%
+
+graph LR
+  SCS["SCS"]
+  ESB_F5["ESB-F5"]
+  MQCP["MQCP"]
+  ESB["ESB"]
+  DCPCI["DCPCI (Cloud)"]
+  DCSM1["DCSM"]
+  DCSM2["DCSM (Cloud)"]
+  GCS["GCS"]
+  PSIS["PSIS"]
+  PSP["PSP (Cloud)"]
+  BCAMS_F5["BCAMS-F5"]
+  GCAMS_F5["GCAMS-F5"]
+  GCS_F5["GCS-F5"]
+  SDS_F5["SDS-F5"]
+  SRS_F5["SRS-F5"]
+  SSS_F5["SSS-F5"]
+  BCAMS["BCAMS"]
+  GCAMS["GCAMS"]
+  SDS["SDS"]
+  SRS["SRS"]
+  SSS["SSS"]
+  GUAMS["GUAMS (Cloud)"]
+
+  BCAMS -- "gcams.013.002" --> ESB_F5
+  BCAMS_F5 -- "bcams.009.056<br/>bcams.009.004<br/>bcams.009.013<br/>bcams.009.083" --> BCAMS
+  DCPCI -- "dcpci.021.008" --> MQCP
+  ESB -- "guams.032.001" --> GUAMS
+
+  ESB -- "gcams.013.037<br/>gcams.013.002<br/>gcams.008.005<br/>gcams.013.030<br/>gcams.008.002" --> GCAMS_F5
+  ESB -- "sss.007.001<br/>sss.002.001<br/>sss.007.002" --> SSS_F5
+  ESB -- "gcs.201.001" --> GCS_F5
+  ESB -- "srs.905.001<br/>srs.905.003" --> SRS_F5
+  ESB -- "bcams.009.056<br/>bcams.009.004<br/>bcams.009.013<br/>bcams.009.083" --> BCAMS_F5
+  ESB -- "sds.902.002" --> SDS_F5
+  ESB_F5 -- "sss.007.001<br/>gcams.013.037<br/>guams.032.001<br/>gcams.008.005<br/>gcams.013.030<br/>gcams.008.002<br/>srs.905.001<br/>srs.905.003<br/>bcams.009.083<br/>sss.002.001<br/>gcams.013.002<br/>sss.007.002<br/>sds.902.002<br/>gcs.201.001<br/>bcams.009.013<br/>bcams.009.056<br/>bcams.009.004" --> ESB
+  GCAMS_F5 -- "gcams.008.005<br/>gcams.013.030<br/>gcams.008.002<br/>gcams.013.002<br/>gcams.013.037" --> GCAMS
+  GCS -- "gcams.008.005<br/>gcams.013.030<br/>gcams.008.002<br/>sss.007.001" --> ESB_F5
+  GCS -- "psp.004.001<br/>gcs.313.001<br/>gcs.305.001" --> MQCP
+  GCS_F5 -- "gcs.201.001" --> GCS
+  MQCP -- "psp.004.001" --> PSP
+  MQCP -- "gcs.305.001" --> PSIS
+  MQCP -- "gcs.313.001" --> DCPCI
+  MQCP -- "psp.007.001" --> DCSM1
+  MQCP -- "psp.007.001" --> DCSM2
+  MQCP -- "dcpci.021.008" --> GCS
+  MQCP -- "psp.004.001<br/>dcpci.021.008<br/>gcs.305.001<br/>gcs.313.001<br/>psp.007.001" --> MQCP
+  PSP -- "psp.007.001" --> MQCP
+  SCS -- "srs.905.001<br/>srs.905.003<br/>guams.032.001<br/>bcams.009.056<br/>bcams.009.004<br/>sss.002.001" --> ESB_F5
+  SCS -- "psp.004.001" --> MQCP
+  SDS -- "sss.007.002" --> ESB_F5
+  SDS_F5 -- "sds.902.002" --> SDS
+  SRS_F5 -- "srs.905.001<br/>srs.905.003" --> SRS
+  SSS -- "bcams.009.013<br/>sds.902.002<br/>gcs.201.001" --> ESB_F5
+  SSS -- "psp.004.001" --> MQCP
+  SSS_F5 -- "sss.002.001<br/>sss.007.002<br/>sss.007.001" --> SSS
+  %% Highlight cloud component
+  classDef cloud fill:#fff7e6,stroke:#fa8c16,stroke-width:2px,color:#ad4e00;
+  class GUAMS cloud;
+  class PSP cloud;
+  class DCPCI cloud;
+  class DCSM2 cloud;
