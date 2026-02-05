@@ -1,0 +1,99 @@
+
+%%{init: {"themeCSS": "@keyframes flowEdge{to{stroke-dashoffset:-24;}} .edgePath path{stroke-dasharray:6 6;animation:flowEdge 2.2s linear infinite;}"}}%%
+
+graph LR
+  SCS[SCS <sup style='color:red;'>Hot</sup>]
+  ESBF5["<span title='ESB F5 负载均衡器'>ESB-F5</span>"]
+  ESB["<span title='ESB实例'>ESB</span>"]
+
+
+  SRSF5[SRS-F5]
+  BCAMSF5[BCAMS-F5]
+  %%GUAMSF5[GUAMS-F5]
+  SSSF5[SSS-F5]
+  SDSF5[SDS-F5]
+  GCSF5[GCS-F5]
+  CMSF5[CMS-F5]
+
+  SRS[SRS]
+  BCAMS[BCAMS]
+  GUAMS["GUAMS <span title='xxxx' style='color:orange; padding:2px;'>&#9729;</span>"]
+  SSS[SSS]
+  SDS[SDS]
+  GCS[GCS]
+  CMS[CMS <span style='color:green; padding:2px;'>&#9729;</span>]
+
+  MQCP[MQCP]
+  MPSS[MPSS]
+  AMEPA[AMEPA]
+
+
+  SCS -- "srs.905.001<br/>bcams.009.004<br/>guams.032.001<br/>bcams.009.056<br/>sss.002.001" --> ESBF5
+
+  ESBF5 -- "srs.905.001<br/>bcams.009.004<br/>guams.032.001<br/>bcams.009.056<br/>sss.002.001<br/>sds.902.005<br/>sss.007.003<br/>bcams.009.013<br/>gcs.201.001<br/>sss.007.001<br/>sds.902.002<br/>sss.007.002<br/>cms.005.006" --> ESB
+
+  ESB -- "srs.905.001" --> SRSF5
+  ESB -- "bcams.009.004<br/>bcams.009.056<br/>bcams.009.013" --> BCAMSF5
+  %%ESB -- "guams.032.001" --> GUAMSF5
+  ESB -- "guams.032.001" --> GUAMS
+  ESB -- "cms.005.006" --> CMSF5
+  ESB -- "sds.902.005<br/>sds.902.002" --> SDSF5
+  ESB -- "sss.002.001<br/>sss.007.003<br/>sss.007.001<br/>sss.007.002" --> SSSF5
+  ESB -- "gcs.201.001" --> GCSF5
+  
+  SRSF5 -- "srs.905.001" --> SRS
+  BCAMSF5 -- "bcams.009.004<br/>bcams.009.056<br/>bcams.009.013" --> BCAMS
+  %%GUAMSF5 -- "guams.032.001" --> GUAMS
+  SDSF5 -- "sds.902.005<br/>sds.902.002" --> SDS
+  SSSF5 -- "sss.002.001<br/>sss.007.003<br/>sss.007.001<br/>sss.007.002" --> SSS
+  GCSF5 -- "gcs.201.001" --> GCS
+  CMSF5 -- "cms.005.006" --> CMS
+
+  SSS -. "<span title='sss.901.003业务说明' style='color:gray; padding:2px;'>sss.901.003</span>" .-> MQCP
+  SSS -- "<span title='sds.902.005业务说明' style='color:red; padding:2px;'>sds.902.005</span><br/><span title='bcams.009.013业务说明' style='color:red; padding:2px;'>bcams.009.013</span><br/>gcs.201.001<br/>sds.902.002<br/>cms.005.006" --> ESBF5
+  SDS -- "<span style=' color:green; padding:2px;'>sss.007.003</span><br/>sss.007.002" --> ESBF5
+  GCS -- "sss.007.001" --> ESBF5
+  GCS -. "gcs.305.001" .-> MQCP
+  SCS -. "scs.003.010" .-> MQCP
+
+%% async edge dash style
+  MQCP -. "scs.003.010<br/>sss.901.003" .-> MPSS
+  MQCP -. "gcs.305.001" .-> AMEPA
+
+  %% --- 健康状态定义 (背景色) ---
+    %% 健康 (浅绿)
+    classDef health fill:#f6ffed,stroke:#52c41a,stroke-width:2px,color:#237804;
+    %% 异常 (橙黄)
+    classDef warning fill:#fff7e6,stroke:#ffa940,stroke-width:2px,color:#ad4e00;
+    %% 严重 (红色)
+    classDef critical fill:#fff1f0,stroke:#f5222d,stroke-width:2px,color:#a8071a;
+
+    %% --- 云上环境定义 (在状态基础上增加虚线边框) ---
+    %% 云上 + 健康
+    classDef cloud_health fill:#f6ffed,stroke:#52c41a,stroke-width:3px,color:#237804,stroke-dasharray: 5 5;
+    %% 云上 + 异常
+    classDef cloud_warning fill:#fff7e6,stroke:#ffa940,stroke-width:3px,color:#ad4e00,stroke-dasharray: 5 5;
+    %% 云上 + 严重
+    classDef cloud_critical fill:#fff1f0,stroke:#f5222d,stroke-width:3px,color:#a8071a,stroke-dasharray: 5 5;
+    class GUAMS critical
+    class SCS warning
+    class ESBF5 warning
+    class ESB warning
+    class SRSF5 health
+    class SRS health
+    class GCSF5 critical
+    class GCS critical
+    
+  %% 修改索引为 1 的线条（即第二条线）为虚线
+  %% stroke-dasharray: 5 5 表示 5像素实线+5像素空白循环
+  linkStyle 0 stroke:red,stroke-width:2px;
+  linkStyle 1 stroke:green,stroke-width:6px;
+  linkStyle 3 stroke:green,stroke-width:2px;
+  linkStyle 2 stroke:orange,stroke-width:2px;
+  linkStyle 19 stroke:red,stroke-width:10px,stroke-dasharray: 5 5;
+  linkStyle 20 stroke:red,stroke-width:6px,stroke-dasharray: 5 5;
+  linkStyle 21 stroke:red,stroke-width:2px,stroke-dasharray: 5 5;
+
+  %% Animate all edges
+  %% NOTE: Mermaid flowchart linkStyle does not support setting a CSS class
+  %% Instead we use themeCSS to target all edges and animate them
